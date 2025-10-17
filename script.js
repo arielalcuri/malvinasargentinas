@@ -1,27 +1,21 @@
 // 1. INICIALIZAR EL MAPA
-// Creamos el mapa sin una vista inicial definida todavía
 const map = L.map('map');
 
-// Definimos las esquinas del rectángulo que enmarcará a Argentina (un poco más amplias para seguridad)
 const southWest = L.latLng(-57, -75);
 const northEast = L.latLng(-20, -52);
 const bounds = L.latLngBounds(southWest, northEast);
 
-// Ajustamos la vista del mapa para que muestre exactamente el área de los límites
 map.fitBounds(bounds);
+map.setMaxBounds(bounds);
+map.setMinZoom(4);
 
-// AHORA SÍ, aplicamos las restricciones
-map.setMaxBounds(bounds); // Aplicamos el marco invisible
-map.setMinZoom(4);      // Evita que se aleje demasiado
-
-// Añadimos la capa base del IGN
 L.tileLayer('https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/capabaseargenmap@EPSG%3A3857@png/{z}/{x}/{-y}.png', {
     attribution: '<a href="http://www.ign.gob.ar" target="_blank">Instituto Geográfico Nacional</a>'
 }).addTo(map);
 
 const markersLayer = L.layerGroup().addTo(map);
 let todosLosLugares = [];
-let capasProvincias = {}; // Objeto para guardar las capas de las provincias por su nombre
+let capasProvincias = {};
 
 // 2. LÓGICA DE LAS PROVINCIAS Y FILTRADO
 function mostrarTodosLosMarcadores() {
@@ -62,7 +56,7 @@ function onProvinceClick(e) {
 
 function onEachFeature(feature, layer) {
     const nombreProvincia = feature.properties.nombre;
-    capasProvincias[nombreProvincia.toLowerCase()] = layer; // Guardamos la capa con el nombre en minúsculas
+    capasProvincias[nombreProvincia.toLowerCase()] = layer;
     layer.on({ click: onProvinceClick });
 }
 
@@ -77,7 +71,7 @@ fetch('https://apis.datos.gob.ar/georef/api/v2.0/provincias.geojson')
     })
     .catch(error => console.error('Error al cargar las provincias:', error));
 
-// 3. CARGAR DATOS DESDE GOOGLE SHEETS
+// 3. CARGAR DATOS Y POBLAR EL BUSCADOR
 const googleSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTozxVh-G1pmH5SPMY3GTizIK1I8l_a6PX6ZE5z3J0Gq3r9-xAmh8_9YmyIkvx3CwAXCCWC6zHmt3pU/pub?gid=0&single=true&output=csv';
 
 Papa.parse(googleSheetURL, {
@@ -86,6 +80,19 @@ Papa.parse(googleSheetURL, {
     complete: function(results) {
         todosLosLugares = results.data;
         mostrarTodosLosMarcadores();
+        
+        // --- NUEVA LÓGICA PARA POBLAR EL BUSCADOR ---
+        const dataList = document.getElementById('province-list');
+        // Extraemos los nombres de las provincias que tienen datos, sin repetirlos
+        const provinciasConDatos = [...new Set(todosLosLugares.map(lugar => lugar.provincia))];
+        
+        provinciasConDatos.forEach(nombreProvincia => {
+            if (nombreProvincia) { // Asegurarnos de no añadir opciones vacías
+                const option = document.createElement('option');
+                option.value = nombreProvincia;
+                dataList.appendChild(option);
+            }
+        });
     }
 });
 
@@ -95,12 +102,14 @@ const searchInput = document.getElementById('province-search');
 
 function buscarProvincia() {
     const searchTerm = searchInput.value.toLowerCase();
+    // Buscamos la capa de la provincia usando el nombre en minúsculas
     const provinciaLayer = capasProvincias[searchTerm];
 
     if (provinciaLayer) {
-        provinciaLayer.fire('click'); // Simulamos un clic en la provincia encontrada
+        provinciaLayer.fire('click'); // Simulamos un clic si la encontramos
+        searchInput.value = ''; // Opcional: limpiar el buscador después de la búsqueda
     } else {
-        alert("Provincia no encontrada. Asegúrate de escribir el nombre completo y correctamente.");
+        alert("Provincia no encontrada. Por favor, selecciona un nombre de la lista.");
     }
 }
 
