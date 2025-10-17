@@ -166,3 +166,11 @@ newPointForm.addEventListener('submit', function(e) {
     })
     .catch(error => console.error('Error:', error));
 });
+
+// 6. LÓGICA DEL FORMULARIO COLAPSABLE
+const formContainer = document.getElementById('form-container');
+const formHeader = formContainer.querySelector('h3');
+
+formHeader.addEventListener('click', () => {
+    formContainer.classList.toggle('expanded');
+});
