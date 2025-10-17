@@ -154,7 +154,7 @@ searchInput.addEventListener('keyup', function(event) {
 // 5. LÓGICA DEL FORMULARIO DE CARGA
 // ... (Esta sección no cambia) ...
 const newPointForm = document.getElementById('new-point-form');
-const SCRIPT_URL = 'URL_QUE_COPIASTE_DE_APPS_SCRIPT_AQUI'; // ¡Recuerda poner tu URL!
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby7Qfv-fl4uifXiL8edLPkHIZXyrpjKvlWmsuYKtLF9ncp6WdWKxJooLWBM46TZUIWA/exec'; // ¡Recuerda poner tu URL!
 newPointForm.addEventListener('submit', function(e) {
     e.preventDefault();
     fetch(SCRIPT_URL, {
