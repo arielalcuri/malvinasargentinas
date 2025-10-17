@@ -16,6 +16,11 @@ L.tileLayer('https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/capabasearge
 const markersLayer = L.layerGroup().addTo(map);
 let todosLosLugares = [];
 let capasProvincias = {};
+let provinciaSeleccionada = null; // Variable para guardar la provincia activa
+
+// --- NUEVOS ESTILOS VISUALES ---
+const defaultStyle = { color: "#1f599e", weight: 2, opacity: 0.8, fillColor: "#1f599e", fillOpacity: 0.2 };
+const highlightStyle = { color: "#ff7800", weight: 3, opacity: 1, fillColor: "#ff7800", fillOpacity: 0.5 };
 
 // 2. LÓGICA DE LAS PROVINCIAS Y FILTRADO
 function mostrarTodosLosMarcadores() {
@@ -34,7 +39,6 @@ function mostrarTodosLosMarcadores() {
 
 function mostrarMarcadoresDeProvincia(nombreProvincia) {
     markersLayer.clearLayers();
-    // Usamos .trim() aquí también por seguridad
     const lugaresDeLaProvincia = todosLosLugares.filter(lugar => lugar.provincia && lugar.provincia.trim() === nombreProvincia);
     lugaresDeLaProvincia.forEach(lugar => {
         if (lugar.lat && lugar.lng) {
@@ -51,13 +55,23 @@ function mostrarMarcadoresDeProvincia(nombreProvincia) {
 function onProvinceClick(e) {
     const layer = e.target;
     const nombreProvincia = layer.feature.properties.nombre;
+
+    // Si ya había una provincia seleccionada, la devolvemos a su estilo original
+    if (provinciaSeleccionada) {
+        provinciaSeleccionada.setStyle(defaultStyle);
+    }
+
+    // Resaltamos la nueva provincia y la guardamos
+    layer.setStyle(highlightStyle);
+    provinciaSeleccionada = layer;
+
     map.fitBounds(layer.getBounds());
     mostrarMarcadoresDeProvincia(nombreProvincia);
 }
 
 function onEachFeature(feature, layer) {
     const nombreProvincia = feature.properties.nombre;
-    capasProvincias[nombreProvincia.toLowerCase()] = layer;
+    capasProvincias[nombreProvincia.toLowerCase().trim()] = layer;
     layer.on({ click: onProvinceClick });
 }
 
@@ -66,7 +80,7 @@ fetch('provincias.geojson')
     .then(data => {
         L.geoJSON(data, {
             onEachFeature: onEachFeature,
-            style: { color: "#1f599e", weight: 2, opacity: 0.8 }
+            style: defaultStyle // Aplicamos el estilo por defecto a todas las provincias
         }).addTo(map);
     })
     .catch(error => console.error('Error al cargar las provincias:', error));
@@ -82,17 +96,11 @@ Papa.parse(googleSheetURL, {
         mostrarTodosLosMarcadores();
         
         const dataList = document.getElementById('province-list');
-        
-        // --- LÓGICA MEJORADA PARA ELIMINAR DUPLICADOS Y ESPACIOS ---
-        // 1. Creamos un array con los nombres de provincia, eliminando espacios invisibles.
         const todasLasProvincias = todosLosLugares
-            .map(lugar => lugar.provincia ? lugar.provincia.trim() : null) // .trim() elimina espacios
-            .filter(Boolean); // .filter(Boolean) elimina valores nulos o vacíos
-        
-        // 2. Usamos 'Set' para obtener una lista de valores únicos.
+            .map(lugar => lugar.provincia ? lugar.provincia.trim() : null)
+            .filter(Boolean);
         const provinciasUnicas = [...new Set(todasLasProvincias)];
         
-        // 3. Creamos las opciones del buscador.
         provinciasUnicas.forEach(nombreProvincia => {
             const option = document.createElement('option');
             option.value = nombreProvincia;
@@ -106,7 +114,6 @@ const searchButton = document.getElementById('search-button');
 const searchInput = document.getElementById('province-search');
 
 function buscarProvincia() {
-    // Usamos .trim() en la búsqueda también
     const searchTerm = searchInput.value.trim().toLowerCase(); 
     const provinciaLayer = capasProvincias[searchTerm];
 
