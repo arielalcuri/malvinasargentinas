@@ -12,6 +12,20 @@
 </head>
 <body>
 
+    <div id="form-container">
+        <h3>Añadir un Nuevo Punto</h3>
+        <form id="new-point-form">
+            <input type="text" name="nombre" placeholder="Nombre del lugar" required>
+            <input type="text" name="lat" placeholder="Latitud" required>
+            <input type="text" name="lng" placeholder="Longitud" required>
+            <input type="text" name="info" placeholder="Descripción" required>
+            <input type="text" name="imagen" placeholder="URL de la imagen" required>
+            <input type="text" name="provincia" placeholder="Provincia" list="province-list-form" required>
+            <datalist id="province-list-form"></datalist>
+            <button type="submit">Añadir al Mapa</button>
+        </form>
+    </div>
+
     <div id="search-container">
         <input type="text" id="province-search" placeholder="Buscar provincia..." list="province-list">
         <datalist id="province-list"></datalist>
