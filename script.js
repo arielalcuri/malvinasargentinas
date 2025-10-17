@@ -17,9 +17,11 @@ const markersLayer = L.layerGroup().addTo(map);
 let todosLosLugares = [];
 let capasProvincias = {};
 let provinciaSeleccionada = null;
+let geojsonLayer = null; // Variable para guardar la capa de provincias
 
-const defaultStyle = { color: "#083D77", weight: 1.5, opacity: 1, fillColor: "#2E628F", fillOpacity: 0.4 };
-const highlightStyle = { color: "#F9A620", weight: 3, opacity: 1, fillColor: "#F9A620", fillOpacity: 0.6 };
+const defaultStyle = { color: "#083D77", weight: 1.5, opacity: 1, fillColor: "#2E628F", fillOpacity: 0.4, "interactive": true };
+const highlightStyle = { color: "#F9A620", weight: 3, opacity: 1, fillColor: "#F9A620", fillOpacity: 0.6, "interactive": true };
+const hiddenStyle = { opacity: 0, fillOpacity: 0, "interactive": false }; // Estilo para ocultar
 
 // 2. LÓGICA DE LAS PROVINCIAS Y FILTRADO
 function mostrarTodosLosMarcadores() {
@@ -56,20 +58,18 @@ function onProvinceClick(e) {
     const layer = e.target;
     const nombreProvincia = layer.feature.properties.nombre;
 
-    // 1. Devolvemos la provincia anterior a su estado normal
-    if (provinciaSeleccionada) {
-        provinciaSeleccionada.setStyle(defaultStyle);
-    }
-
-    // 2. Traemos la nueva provincia al frente y la resaltamos
-    layer.bringToFront(); // <-- AÑADIDO
+    // 1. Ocultamos todas las provincias
+    geojsonLayer.eachLayer(l => l.setStyle(hiddenStyle));
+    
+    // 2. Resaltamos y traemos al frente solo la seleccionada
     layer.setStyle(highlightStyle);
+    layer.bringToFront();
     provinciaSeleccionada = layer;
 
-    // 3. Usamos "flyToBounds" para un zoom animado y suave
-    map.flyToBounds(layer.getBounds()); // <-- MODIFICADO
+    // 3. Zoom animado a la provincia
+    map.flyToBounds(layer.getBounds());
 
-    // 4. Mostramos los marcadores
+    // 4. Mostramos solo los marcadores de esa provincia
     mostrarMarcadoresDeProvincia(nombreProvincia);
 }
 
@@ -96,7 +96,8 @@ function onEachFeature(feature, layer) {
 fetch('provincias.geojson')
     .then(response => response.json())
     .then(data => {
-        L.geoJSON(data, {
+        // Guardamos la capa en nuestra variable global
+        geojsonLayer = L.geoJSON(data, {
             onEachFeature: onEachFeature,
             style: defaultStyle
         }).addTo(map);
@@ -104,8 +105,8 @@ fetch('provincias.geojson')
     .catch(error => console.error('Error al cargar las provincias:', error));
 
 // 3. CARGAR DATOS Y POBLAR EL BUSCADOR
-const googleSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTozxVh-G1pmH5SPMY3GTizIK1I8l_a6PX6ZE5z3J0g3r9-xAmh8_9YmyIkvx3CwAXCCWC6zHmt3pU/pub?gid=0&single=true&output=csv';
-
+// ... (Esta sección no cambia) ...
+const googleSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTozxVh-G1pmH5SPMY3GTizIK1I8l_a6PX6ZE5z3J0Gq3r9-xAmh8_9YmyIkvx3CwAXCCWC6zHmt3pU/pub?gid=0&single=true&output=csv';
 Papa.parse(googleSheetURL, {
     download: true,
     header: true,
@@ -130,9 +131,9 @@ Papa.parse(googleSheetURL, {
 });
 
 // 4. LÓGICA DEL BUSCADOR
+// ... (Esta sección no cambia) ...
 const searchButton = document.getElementById('search-button');
 const searchInput = document.getElementById('province-search');
-
 function buscarProvincia() {
     const searchTerm = searchInput.value.trim().toLowerCase();
     const provinciaLayer = capasProvincias[searchTerm];
@@ -143,7 +144,6 @@ function buscarProvincia() {
         alert("Provincia no encontrada. Por favor, selecciona un nombre de la lista.");
     }
 }
-
 searchButton.addEventListener('click', buscarProvincia);
 searchInput.addEventListener('keyup', function(event) {
     if (event.key === "Enter") {
@@ -152,13 +152,11 @@ searchInput.addEventListener('keyup', function(event) {
 });
 
 // 5. LÓGICA DEL FORMULARIO DE CARGA
+// ... (Esta sección no cambia) ...
 const newPointForm = document.getElementById('new-point-form');
-// ▼▼▼ ¡REEMPLAZA ESTA URL POR LA TUYA! ▼▼▼
-const SCRIPT_URL = 'URL_QUE_COPIASTE_DE_APPS_SCRIPT_AQUI';
-
+const SCRIPT_URL = 'URL_QUE_COPIASTE_DE_APPS_SCRIPT_AQUI'; // ¡Recuerda poner tu URL!
 newPointForm.addEventListener('submit', function(e) {
     e.preventDefault();
-
     fetch(SCRIPT_URL, {
         method: 'POST',
         body: new FormData(newPointForm)
@@ -176,9 +174,28 @@ newPointForm.addEventListener('submit', function(e) {
 });
 
 // 6. LÓGICA DEL FORMULARIO COLAPSABLE
+// ... (Esta sección no cambia) ...
 const formContainer = document.getElementById('form-container');
 const formHeader = formContainer.querySelector('h3');
-
 formHeader.addEventListener('click', () => {
     formContainer.classList.toggle('expanded');
 });
+
+// --- 7. LÓGICA DEL BOTÓN DE RESET ---
+const resetButton = document.getElementById('reset-button');
+
+function resetMap() {
+    // 1. Mostramos todas las provincias
+    geojsonLayer.eachLayer(l => l.setStyle(defaultStyle));
+    
+    // 2. Reseteamos el zoom
+    map.flyToBounds(bounds);
+    
+    // 3. Mostramos todos los marcadores
+    mostrarTodosLosMarcadores();
+    
+    // 4. Limpiamos la selección
+    provinciaSeleccionada = null;
+}
+
+resetButton.addEventListener('click', resetMap);
