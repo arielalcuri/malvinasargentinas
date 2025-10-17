@@ -18,6 +18,7 @@ let todosLosLugares = [];
 let capasProvincias = {};
 
 // 2. LÓGICA DE LAS PROVINCIAS Y FILTRADO
+// ... (El resto de esta sección no cambia) ...
 function mostrarTodosLosMarcadores() {
     markersLayer.clearLayers();
     todosLosLugares.forEach(lugar => {
@@ -59,17 +60,19 @@ function onEachFeature(feature, layer) {
     capasProvincias[nombreProvincia.toLowerCase()] = layer;
     layer.on({ click: onProvinceClick });
 }
-
-fetch('https://apis.datos.gob.ar/georef/api/v2.0/provincias.geojson')
+// --- LÍNEA MODIFICADA ---
+// Ahora leemos el archivo local que subiste a tu proyecto
+fetch('provincias.geojson')
     .then(response => response.json())
     .then(data => {
-        const geojsonData = { "type": "FeatureCollection", "features": data.features };
-        L.geoJSON(geojsonData, {
+        // Este archivo ya tiene el formato correcto, no necesitamos reestructurarlo
+        L.geoJSON(data, {
             onEachFeature: onEachFeature,
             style: { color: "#1f599e", weight: 2, opacity: 0.8 }
         }).addTo(map);
     })
     .catch(error => console.error('Error al cargar las provincias:', error));
+
 
 // 3. CARGAR DATOS Y POBLAR EL BUSCADOR
 const googleSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTozxVh-G1pmH5SPMY3GTizIK1I8l_a6PX6ZE5z3J0Gq3r9-xAmh8_9YmyIkvx3CwAXCCWC6zHmt3pU/pub?gid=0&single=true&output=csv';
@@ -81,13 +84,11 @@ Papa.parse(googleSheetURL, {
         todosLosLugares = results.data;
         mostrarTodosLosMarcadores();
         
-        // --- NUEVA LÓGICA PARA POBLAR EL BUSCADOR ---
         const dataList = document.getElementById('province-list');
-        // Extraemos los nombres de las provincias que tienen datos, sin repetirlos
         const provinciasConDatos = [...new Set(todosLosLugares.map(lugar => lugar.provincia))];
         
         provinciasConDatos.forEach(nombreProvincia => {
-            if (nombreProvincia) { // Asegurarnos de no añadir opciones vacías
+            if (nombreProvincia) {
                 const option = document.createElement('option');
                 option.value = nombreProvincia;
                 dataList.appendChild(option);
@@ -102,12 +103,11 @@ const searchInput = document.getElementById('province-search');
 
 function buscarProvincia() {
     const searchTerm = searchInput.value.toLowerCase();
-    // Buscamos la capa de la provincia usando el nombre en minúsculas
     const provinciaLayer = capasProvincias[searchTerm];
 
     if (provinciaLayer) {
-        provinciaLayer.fire('click'); // Simulamos un clic si la encontramos
-        searchInput.value = ''; // Opcional: limpiar el buscador después de la búsqueda
+        provinciaLayer.fire('click');
+        searchInput.value = '';
     } else {
         alert("Provincia no encontrada. Por favor, selecciona un nombre de la lista.");
     }
