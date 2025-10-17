@@ -22,7 +22,7 @@ function onEachFeature(feature, layer) {
 }
 
 // Cargamos el GeoJSON directamente desde la API del gobierno
-fetch('https://apis.datos.gob.ar/georef/api/v2.0/provincias.geojson')
+fetch('https://apis.datos.gob.ar/georef/api/v2.0/provincias.json')
     .then(response => response.json())
     .then(data => {
         // La API devuelve los datos dentro de una propiedad "features"
@@ -69,3 +69,4 @@ Papa.parse(googleSheetURL, {
         });
     }
 });
+
