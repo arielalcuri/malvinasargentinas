@@ -81,14 +81,19 @@ Papa.parse(googleSheetURL, {
         mostrarTodosLosMarcadores();
         
         const dataList = document.getElementById('province-list');
-        const provinciasConDatos = [...new Set(todosLosLugares.map(lugar => lugar.provincia))];
         
-        provinciasConDatos.forEach(nombreProvincia => {
-            if (nombreProvincia) {
-                const option = document.createElement('option');
-                option.value = nombreProvincia;
-                dataList.appendChild(option);
-            }
+        // --- LÓGICA CORREGIDA PARA ELIMINAR DUPLICADOS ---
+        // 1. Creamos un array con TODOS los nombres de provincia de tu Sheet.
+        const todasLasProvincias = todosLosLugares.map(lugar => lugar.provincia).filter(Boolean); // .filter(Boolean) elimina valores vacíos
+        
+        // 2. Usamos 'Set' para obtener una lista de valores únicos automáticamente.
+        const provinciasUnicas = [...new Set(todasLasProvincias)];
+        
+        // 3. Creamos las opciones del buscador usando la lista de provincias únicas.
+        provinciasUnicas.forEach(nombreProvincia => {
+            const option = document.createElement('option');
+            option.value = nombreProvincia;
+            dataList.appendChild(option);
         });
     }
 });
