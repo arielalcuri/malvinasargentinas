@@ -1,12 +1,27 @@
-/* Elimina los márgenes por defecto del navegador */
-html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
+#search-container {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000; /* Asegura que esté por encima del mapa */
+    display: flex;
+    background-color: white;
+    padding: 5px;
+    border-radius: 5px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.65);
 }
 
-/* Hace que el contenedor del mapa ocupe toda la pantalla */
-#map {
-    width: 100%;
-    height: 100%;
+#province-search {
+    border: 1px solid #ccc;
+    padding: 5px;
+    border-radius: 3px;
+}
+
+#search-button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    margin-left: 5px;
+    cursor: pointer;
+    border-radius: 3px;
 }
