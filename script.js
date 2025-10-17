@@ -1,5 +1,16 @@
 // 1. INICIALIZAR EL MAPA
-const map = L.map('map').setView([-40, -63], 4);
+// Definimos las esquinas del rectángulo que enmarcará a Argentina
+const southWest = L.latLng(-56, -74); // Esquina inferior izquierda (Sudoeste)
+const northEast = L.latLng(-21, -53); // Esquina superior derecha (Noreste)
+const bounds = L.latLngBounds(southWest, northEast);
+
+// Inicializamos el mapa con los límites definidos
+const map = L.map('map', {
+    center: [-40, -63],
+    zoom: 4,
+    maxBounds: bounds, // Aplicamos el marco invisible
+    minZoom: 4 // Opcional: evita que se aleje demasiado y vea bordes vacíos
+});
 
 L.tileLayer('https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/capabaseargenmap@EPSG%3A3857@png/{z}/{x}/{-y}.png', {
     attribution: '<a href="http://www.ign.gob.ar" target="_blank">Instituto Geográfico Nacional</a>'
