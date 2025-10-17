@@ -51,17 +51,25 @@ function mostrarMarcadoresDeProvincia(nombreProvincia) {
     });
 }
 
+// --- FUNCIÓN onProvinceClick MODIFICADA ---
 function onProvinceClick(e) {
     const layer = e.target;
     const nombreProvincia = layer.feature.properties.nombre;
 
+    // 1. Devolvemos la provincia anterior a su estado normal
     if (provinciaSeleccionada) {
         provinciaSeleccionada.setStyle(defaultStyle);
     }
+
+    // 2. Traemos la nueva provincia al frente y la resaltamos
+    layer.bringToFront(); // <-- AÑADIDO
     layer.setStyle(highlightStyle);
     provinciaSeleccionada = layer;
 
-    map.fitBounds(layer.getBounds());
+    // 3. Usamos "flyToBounds" para un zoom animado y suave
+    map.flyToBounds(layer.getBounds()); // <-- MODIFICADO
+
+    // 4. Mostramos los marcadores
     mostrarMarcadoresDeProvincia(nombreProvincia);
 }
 
@@ -96,7 +104,7 @@ fetch('provincias.geojson')
     .catch(error => console.error('Error al cargar las provincias:', error));
 
 // 3. CARGAR DATOS Y POBLAR EL BUSCADOR
-const googleSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTozxVh-G1pmH5SPMY3GTizIK1I8l_a6PX6ZE5z3J0Gq3r9-xAmh8_9YmyIkvx3CwAXCCWC6zHmt3pU/pub?gid=0&single=true&output=csv';
+const googleSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTozxVh-G1pmH5SPMY3GTizIK1I8l_a6PX6ZE5z3J0g3r9-xAmh8_9YmyIkvx3CwAXCCWC6zHmt3pU/pub?gid=0&single=true&output=csv';
 
 Papa.parse(googleSheetURL, {
     download: true,
@@ -146,7 +154,7 @@ searchInput.addEventListener('keyup', function(event) {
 // 5. LÓGICA DEL FORMULARIO DE CARGA
 const newPointForm = document.getElementById('new-point-form');
 // ▼▼▼ ¡REEMPLAZA ESTA URL POR LA TUYA! ▼▼▼
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby7Qfv-fl4uifXiL8edLPkHIZXyrpjKvlWmsuYKtLF9ncp6WdWKxJooLWBM46TZUIWA/exec';
+const SCRIPT_URL = 'URL_QUE_COPIASTE_DE_APPS_SCRIPT_AQUI';
 
 newPointForm.addEventListener('submit', function(e) {
     e.preventDefault();
