@@ -1,3 +1,7 @@
+body {
+    font-family: 'Roboto', sans-serif;
+}
+
 html, body {
     margin: 0;
     padding: 0;
@@ -28,11 +32,43 @@ html, body {
 }
 
 #search-button {
-    background-color: #007bff;
+    background-color: #083D77;
     color: white;
     border: none;
     padding: 5px 10px;
     margin-left: 5px;
     cursor: pointer;
     border-radius: 3px;
+}
+
+#search-button:hover {
+    background-color: #2E628F;
+}
+
+/* Estilos para el Pop-up Personalizado */
+.custom-popup .leaflet-popup-content-wrapper {
+    background: #083D77;
+    color: white;
+    border-radius: 8px;
+    box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+}
+
+.custom-popup .leaflet-popup-content {
+    margin: 15px;
+    line-height: 1.4;
+}
+
+.custom-popup .leaflet-popup-tip-container {
+    display: none;
+}
+
+.custom-popup img {
+    width: 100%;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.custom-popup b {
+    font-size: 16px;
+    color: #F9A620;
 }
