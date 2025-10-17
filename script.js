@@ -2,9 +2,9 @@
 // Centramos el mapa en Argentina con un nivel de zoom inicial
 const map = L.map('map').setView([-40, -63], 4);
 
-// Añadimos una capa de mapa base de OpenStreetMap
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+// Añadimos la capa de mapa base oficial del Instituto Geográfico Nacional
+L.tileLayer('https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/capabaseargenmap@EPSG%3A3857@png/{z}/{x}/{-y}.png', {
+    attribution: '<a href="http://www.ign.gob.ar" target="_blank">Instituto Geográfico Nacional</a> + <a href="http://www.osm.org/copyright" target="_blank">OpenStreetMap</a>'
 }).addTo(map);
 
 
@@ -22,7 +22,7 @@ function onEachFeature(feature, layer) {
 }
 
 // Cargamos el GeoJSON directamente desde la API del gobierno
-fetch('https://apis.datos.gob.ar/georef/api/v2.0/provincias.json')
+fetch('https://apis.datos.gob.ar/georef/api/v2.0/provincias.geojson')
     .then(response => response.json())
     .then(data => {
         // La API devuelve los datos dentro de una propiedad "features"
@@ -69,4 +69,3 @@ Papa.parse(googleSheetURL, {
         });
     }
 });
-
