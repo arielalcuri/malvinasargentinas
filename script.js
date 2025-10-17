@@ -18,7 +18,6 @@ let todosLosLugares = [];
 let capasProvincias = {};
 
 // 2. LÓGICA DE LAS PROVINCIAS Y FILTRADO
-// ... (El resto de esta sección no cambia) ...
 function mostrarTodosLosMarcadores() {
     markersLayer.clearLayers();
     todosLosLugares.forEach(lugar => {
@@ -60,19 +59,16 @@ function onEachFeature(feature, layer) {
     capasProvincias[nombreProvincia.toLowerCase()] = layer;
     layer.on({ click: onProvinceClick });
 }
-// --- LÍNEA MODIFICADA ---
-// Ahora leemos el archivo local que subiste a tu proyecto
+
 fetch('provincias.geojson')
     .then(response => response.json())
     .then(data => {
-        // Este archivo ya tiene el formato correcto, no necesitamos reestructurarlo
         L.geoJSON(data, {
             onEachFeature: onEachFeature,
             style: { color: "#1f599e", weight: 2, opacity: 0.8 }
         }).addTo(map);
     })
     .catch(error => console.error('Error al cargar las provincias:', error));
-
 
 // 3. CARGAR DATOS Y POBLAR EL BUSCADOR
 const googleSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTozxVh-G1pmH5SPMY3GTizIK1I8l_a6PX6ZE5z3J0Gq3r9-xAmh8_9YmyIkvx3CwAXCCWC6zHmt3pU/pub?gid=0&single=true&output=csv';
@@ -119,4 +115,3 @@ searchInput.addEventListener('keyup', function(event) {
         buscarProvincia();
     }
 });
- 
