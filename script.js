@@ -58,8 +58,16 @@ Papa.parse(googleSheetURL, {
             if (lugar.lat && lugar.lng) { 
                 L.marker([lugar.lat, lugar.lng])
                     .addTo(map)
-                    .bindPopup(`<b>${lugar.nombre}</b><br>${lugar.info}`);
+                    // Después (el nuevo código)
+.bindPopup(`
+    <img src="${lugar.imagen}" width="150px" />
+    <br>
+    <b>${lugar.nombre}</b>
+    <br>
+    ${lugar.info}
+`);
             }
         });
     }
+
 });
