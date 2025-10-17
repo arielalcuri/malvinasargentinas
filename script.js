@@ -34,7 +34,8 @@ function mostrarTodosLosMarcadores() {
 
 function mostrarMarcadoresDeProvincia(nombreProvincia) {
     markersLayer.clearLayers();
-    const lugaresDeLaProvincia = todosLosLugares.filter(lugar => lugar.provincia === nombreProvincia);
+    // Usamos .trim() aquí también por seguridad
+    const lugaresDeLaProvincia = todosLosLugares.filter(lugar => lugar.provincia && lugar.provincia.trim() === nombreProvincia);
     lugaresDeLaProvincia.forEach(lugar => {
         if (lugar.lat && lugar.lng) {
             L.marker([lugar.lat, lugar.lng])
@@ -82,14 +83,16 @@ Papa.parse(googleSheetURL, {
         
         const dataList = document.getElementById('province-list');
         
-        // --- LÓGICA CORREGIDA PARA ELIMINAR DUPLICADOS ---
-        // 1. Creamos un array con TODOS los nombres de provincia de tu Sheet.
-        const todasLasProvincias = todosLosLugares.map(lugar => lugar.provincia).filter(Boolean); // .filter(Boolean) elimina valores vacíos
+        // --- LÓGICA MEJORADA PARA ELIMINAR DUPLICADOS Y ESPACIOS ---
+        // 1. Creamos un array con los nombres de provincia, eliminando espacios invisibles.
+        const todasLasProvincias = todosLosLugares
+            .map(lugar => lugar.provincia ? lugar.provincia.trim() : null) // .trim() elimina espacios
+            .filter(Boolean); // .filter(Boolean) elimina valores nulos o vacíos
         
-        // 2. Usamos 'Set' para obtener una lista de valores únicos automáticamente.
+        // 2. Usamos 'Set' para obtener una lista de valores únicos.
         const provinciasUnicas = [...new Set(todasLasProvincias)];
         
-        // 3. Creamos las opciones del buscador usando la lista de provincias únicas.
+        // 3. Creamos las opciones del buscador.
         provinciasUnicas.forEach(nombreProvincia => {
             const option = document.createElement('option');
             option.value = nombreProvincia;
@@ -103,7 +106,8 @@ const searchButton = document.getElementById('search-button');
 const searchInput = document.getElementById('province-search');
 
 function buscarProvincia() {
-    const searchTerm = searchInput.value.toLowerCase();
+    // Usamos .trim() en la búsqueda también
+    const searchTerm = searchInput.value.trim().toLowerCase(); 
     const provinciaLayer = capasProvincias[searchTerm];
 
     if (provinciaLayer) {
