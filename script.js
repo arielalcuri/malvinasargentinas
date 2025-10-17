@@ -16,11 +16,11 @@ L.tileLayer('https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/capabasearge
 const markersLayer = L.layerGroup().addTo(map);
 let todosLosLugares = [];
 let capasProvincias = {};
-let provinciaSeleccionada = null; // Variable para guardar la provincia activa
+let provinciaSeleccionada = null;
 
-// --- NUEVOS ESTILOS VISUALES ---
-const defaultStyle = { color: "#1f599e", weight: 2, opacity: 0.8, fillColor: "#1f599e", fillOpacity: 0.2 };
-const highlightStyle = { color: "#ff7800", weight: 3, opacity: 1, fillColor: "#ff7800", fillOpacity: 0.5 };
+// Paleta de colores: Azul petróleo suave y un acento ámbar
+const defaultStyle = { color: "#083D77", weight: 1.5, opacity: 1, fillColor: "#2E628F", fillOpacity: 0.4 };
+const highlightStyle = { color: "#F9A620", weight: 3, opacity: 1, fillColor: "#F9A620", fillOpacity: 0.6 };
 
 // 2. LÓGICA DE LAS PROVINCIAS Y FILTRADO
 function mostrarTodosLosMarcadores() {
@@ -30,9 +30,9 @@ function mostrarTodosLosMarcadores() {
             L.marker([lugar.lat, lugar.lng])
                 .addTo(markersLayer)
                 .bindPopup(`
-                    <img src="${lugar.imagen}" alt="Imagen de ${lugar.nombre}" width="150px" style="border-radius: 5px; margin-bottom: 5px;"/>
-                    <br><b style="font-size: 14px;">${lugar.nombre}</b><br>${lugar.info}
-                `);
+                    <img src="${lugar.imagen}" alt="Imagen de ${lugar.nombre}" />
+                    <b>${lugar.nombre}</b><br>${lugar.info}
+                `, { className: 'custom-popup' });
         }
     });
 }
@@ -45,9 +45,9 @@ function mostrarMarcadoresDeProvincia(nombreProvincia) {
             L.marker([lugar.lat, lugar.lng])
                 .addTo(markersLayer)
                 .bindPopup(`
-                    <img src="${lugar.imagen}" alt="Imagen de ${lugar.nombre}" width="150px" style="border-radius: 5px; margin-bottom: 5px;"/>
-                    <br><b style="font-size: 14px;">${lugar.nombre}</b><br>${lugar.info}
-                `);
+                    <img src="${lugar.imagen}" alt="Imagen de ${lugar.nombre}" />
+                    <b>${lugar.nombre}</b><br>${lugar.info}
+                `, { className: 'custom-popup' });
         }
     });
 }
@@ -56,12 +56,9 @@ function onProvinceClick(e) {
     const layer = e.target;
     const nombreProvincia = layer.feature.properties.nombre;
 
-    // Si ya había una provincia seleccionada, la devolvemos a su estilo original
     if (provinciaSeleccionada) {
         provinciaSeleccionada.setStyle(defaultStyle);
     }
-
-    // Resaltamos la nueva provincia y la guardamos
     layer.setStyle(highlightStyle);
     provinciaSeleccionada = layer;
 
@@ -72,7 +69,21 @@ function onProvinceClick(e) {
 function onEachFeature(feature, layer) {
     const nombreProvincia = feature.properties.nombre;
     capasProvincias[nombreProvincia.toLowerCase().trim()] = layer;
-    layer.on({ click: onProvinceClick });
+    layer.on({
+        click: onProvinceClick,
+        mouseover: function (e) {
+            const hoveredLayer = e.target;
+            if (hoveredLayer !== provinciaSeleccionada) {
+                hoveredLayer.setStyle({ weight: 3, color: '#F9A620', fillOpacity: 0.6 });
+            }
+        },
+        mouseout: function (e) {
+            const hoveredLayer = e.target;
+            if (hoveredLayer !== provinciaSeleccionada) {
+                hoveredLayer.setStyle(defaultStyle);
+            }
+        }
+    });
 }
 
 fetch('provincias.geojson')
@@ -80,7 +91,7 @@ fetch('provincias.geojson')
     .then(data => {
         L.geoJSON(data, {
             onEachFeature: onEachFeature,
-            style: defaultStyle // Aplicamos el estilo por defecto a todas las provincias
+            style: defaultStyle
         }).addTo(map);
     })
     .catch(error => console.error('Error al cargar las provincias:', error));
@@ -114,9 +125,8 @@ const searchButton = document.getElementById('search-button');
 const searchInput = document.getElementById('province-search');
 
 function buscarProvincia() {
-    const searchTerm = searchInput.value.trim().toLowerCase(); 
+    const searchTerm = searchInput.value.trim().toLowerCase();
     const provinciaLayer = capasProvincias[searchTerm];
-
     if (provinciaLayer) {
         provinciaLayer.fire('click');
         searchInput.value = '';
