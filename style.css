@@ -55,11 +55,33 @@ html, body {
     border-radius: 8px;
     box-shadow: 0 1px 5px rgba(0,0,0,0.65);
     width: 250px;
+    transition: all 0.3s ease; /* Transición suave */
 }
 
 #form-container h3 {
     margin-top: 0;
     color: #083D77;
+    cursor: pointer; /* Indica que el título es clickeable */
+}
+
+/* --- ESTILOS PARA EL FORMULARIO COLAPSABLE --- */
+#new-point-form {
+    display: none; /* El formulario está oculto por defecto */
+}
+
+#form-container.expanded #new-point-form {
+    display: block; /* Se muestra cuando el contenedor tiene la clase 'expanded' */
+}
+
+/* Flechita indicadora */
+#form-container h3::after {
+    content: ' ▼';
+    font-size: 0.8em;
+    float: right;
+}
+
+#form-container.expanded h3::after {
+    content: ' ▲';
 }
 
 #new-point-form input {
