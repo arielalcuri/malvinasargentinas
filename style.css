@@ -1,151 +1,225 @@
-body {
-    font-family: 'Roboto', sans-serif;
+// 1. INICIALIZAR EL MAPA
+const map = L.map('map');
+
+const southWest = L.latLng(-57, -75);
+const northEast = L.latLng(-20, -52);
+const bounds = L.latLngBounds(southWest, northEast);
+
+map.fitBounds(bounds);
+map.setMaxBounds(bounds);
+map.setMinZoom(4);
+
+L.tileLayer('https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/capabaseargenmap@EPSG%3A3857@png/{z}/{x}/{-y}.png', {
+    attribution: '<a href="http://www.ign.gob.ar" target="_blank">Instituto Geográfico Nacional</a>'
+}).addTo(map);
+
+// --- NUEVO BUSCADOR DE CALLES (GEOCORIFICADOR) ---
+const geocoder = L.Control.geocoder({
+    defaultMarkGeocode: false, // No queremos que ponga su propio marcador
+    placeholder: 'Buscar dirección para el formulario...',
+    geocoder: L.Control.Geocoder.nominatim({
+        geocodingQueryParams: {
+            "countrycodes": "ar" // Limitamos la búsqueda solo a Argentina
+        }
+    })
+})
+.on('markgeocode', function(e) {
+    const geocode = e.geocode;
+    const center = geocode.center;
+
+    // 1. Hacemos zoom a la ubicación encontrada
+    map.flyTo(center, 16); // Zoom a nivel de calle
+
+    // 2. Rellenamos los campos de latitud y longitud en el formulario
+    const latInput = document.querySelector('#new-point-form input[name="lat"]');
+    const lngInput = document.querySelector('#new-point-form input[name="lng"]');
+    latInput.value = center.lat;
+    lngInput.value = center.lng;
+
+    // 3. Intentamos rellenar la provincia
+    if (geocode.properties && geocode.properties.address) {
+        const address = geocode.properties.address;
+        const provinceInput = document.querySelector('#new-point-form input[name="provincia"]');
+        
+        // El servicio de geocodificación (Nominatim) devuelve la provincia en el campo 'state'
+        if (address.state) {
+            provinceInput.value = address.state;
+        }
+    }
+
+    // 4. Expandimos el formulario para que el usuario vea los campos llenos
+    const formContainer = document.getElementById('form-container');
+    if (!formContainer.classList.contains('expanded')) {
+        formContainer.classList.add('expanded');
+    }
+})
+.addTo(map);
+
+// --- FIN DEL BUSCADOR DE CALLES ---
+
+const markersLayer = L.layerGroup().addTo(map);
+let todosLosLugares = [];
+let capasProvincias = {};
+let provinciaSeleccionada = null;
+let geojsonLayer = null; 
+
+const defaultStyle = { color: "#083D77", weight: 1.5, opacity: 1, fillColor: "#2E628F", fillOpacity: 0.4, "interactive": true };
+const highlightStyle = { color: "#F9A620", weight: 3, opacity: 1, fillColor: "#F9A620", fillOpacity: 0.6, "interactive": true };
+const hiddenStyle = { opacity: 0, fillOpacity: 0, "interactive": false }; 
+
+// 2. LÓGICA DE LAS PROVINCIAS Y FILTRADO
+function mostrarTodosLosMarcadores() {
+    markersLayer.clearLayers();
+    todosLosLugares.forEach(lugar => {
+        if (lugar.lat && lugar.lng) {
+            L.marker([lugar.lat, lugar.lng])
+                .addTo(markersLayer)
+                .bindPopup(`
+                    <img src="${lugar.imagen}" alt="Imagen de ${lugar.nombre}" />
+                    <b>${lugar.nombre}</b><br>${lugar.info}
+                `, { className: 'custom-popup' });
+        }
+    });
 }
 
-html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
+function mostrarMarcadoresDeProvincia(nombreProvincia) {
+    markersLayer.clearLayers();
+    const lugaresDeLaProvincia = todosLosLugares.filter(lugar => lugar.provincia && lugar.provincia.trim() === nombreProvincia);
+    lugaresDeLaProvincia.forEach(lugar => {
+        if (lugar.lat && lugar.lng) {
+            L.marker([lugar.lat, lugar.lng])
+                .addTo(markersLayer)
+                .bindPopup(`
+                    <img src="${lugar.imagen}" alt="Imagen de ${lugar.nombre}" />
+                    <b>${lugar.nombre}</b><br>${lugar.info}
+                `, { className: 'custom-popup' });
+        }
+    });
 }
 
-#map {
-    width: 100%;
-    height: 100%;
+function onProvinceClick(e) {
+    const layer = e.target;
+    const nombreProvincia = layer.feature.properties.nombre;
+
+    geojsonLayer.eachLayer(l => l.setStyle(hiddenStyle));
+    layer.setStyle(highlightStyle);
+    layer.bringToFront();
+    provinciaSeleccionada = layer;
+
+    map.flyToBounds(layer.getBounds());
+    mostrarMarcadoresDeProvincia(nombreProvincia);
 }
 
-#search-container {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 1000;
-    display: flex;
-    background-color: white;
-    padding: 5px;
-    border-radius: 5px;
-    box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+function onEachFeature(feature, layer) {
+    const nombreProvincia = feature.properties.nombre;
+    capasProvincias[nombreProvincia.toLowerCase().trim()] = layer;
+    layer.on({
+        click: onProvinceClick,
+        mouseover: function (e) {
+            const hoveredLayer = e.target;
+            if (hoveredLayer !== provinciaSeleccionada) {
+                hoveredLayer.setStyle({ weight: 3, color: '#F9A620', fillOpacity: 0.6 });
+            }
+        },
+        mouseout: function (e) {
+            const hoveredLayer = e.target;
+            if (hoveredLayer !== provinciaSeleccionada) {
+                hoveredLayer.setStyle(defaultStyle);
+            }
+        }
+    });
 }
 
-#province-search {
-    border: 1px solid #ccc;
-    padding: 5px;
-    border-radius: 3px;
-}
+fetch('provincias.geojson')
+    .then(response => response.json())
+    .then(data => {
+        geojsonLayer = L.geoJSON(data, {
+            onEachFeature: onEachFeature,
+            style: defaultStyle
+        }).addTo(map);
+    })
+    .catch(error => console.error('Error al cargar las provincias:', error));
 
-#search-button {
-    background-color: #083D77;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    margin-left: 5px;
-    cursor: pointer;
-    border-radius: 3px;
-}
+// 3. CARGAR DATOS Y POBLAR EL BUSCADOR
+const googleSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTozxVh-G1pmH5SPMY3GTizIK1I8l_a6PX6ZE5z3J0Gq3r9-xAmh8_9YmyIkvx3CwAXCCWC6zHmt3pU/pub?gid=0&single=true&output=csv';
+Papa.parse(googleSheetURL, {
+    download: true,
+    header: true,
+    complete: function(results) {
+        todosLosLugares = results.data;
+        mostrarTodosLosMarcadores();
+        
+        const dataList = document.getElementById('province-list');
+        const dataListForm = document.getElementById('province-list-form');
+        const todasLasProvincias = todosLosLugares
+            .map(lugar => lugar.provincia ? lugar.provincia.trim() : null)
+            .filter(Boolean);
+        const provinciasUnicas = [...new Set(todasLasProvincias)];
+        
+        provinciasUnicas.forEach(nombreProvincia => {
+            const option = document.createElement('option');
+            option.value = nombreProvincia;
+            dataList.appendChild(option);
+            dataListForm.appendChild(option.cloneNode(true));
+        });
+    }
+});
 
-#search-button:hover {
-    background-color: #2E628F;
+// 4. LÓGICA DEL BUSCADOR DE PROVINCIAS
+const searchButton = document.getElementById('search-button');
+const searchInput = document.getElementById('province-search');
+function buscarProvincia() {
+    const searchTerm = searchInput.value.trim().toLowerCase();
+    const provinciaLayer = capasProvincias[searchTerm];
+    if (provinciaLayer) {
+        provinciaLayer.fire('click');
+        searchInput.value = '';
+    } else {
+        alert("Provincia no encontrada. Por favor, selecciona un nombre de la lista.");
+    }
 }
+searchButton.addEventListener('click', buscarProvincia);
+searchInput.addEventListener('keyup', function(event) {
+    if (event.key === "Enter") {
+        buscarProvincia();
+    }
+});
 
-#form-container {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    z-index: 1000;
-    background: white;
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 1px 5px rgba(0,0,0,0.65);
-    width: 250px;
-    transition: all 0.3s ease; /* Transición suave */
-}
+// 5. LÓGICA DEL FORMULARIO DE CARGA
+const newPointForm = document.getElementById('new-point-form');
+const SCRIPT_URL = 'URL_QUE_COPIASTE_DE_APPS_SCRIPT_AQUI'; // ¡Recuerda poner tu URL!
+newPointForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: new FormData(newPointForm)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.result === 'success') {
+            alert('¡Punto añadido con éxito! El mapa se actualizará en 1-2 minutos. Por favor, recarga la página.');
+            newPointForm.reset();
+        } else {
+            alert('Hubo un error al añadir el punto.');
+        }
+    })
+    .catch(error => console.error('Error:', error));
+});
 
-#form-container h3 {
-    margin-top: 0;
-    color: #083D77;
-    cursor: pointer; /* Indica que el título es clickeable */
-}
+// 6. LÓGICA DEL FORMULARIO COLAPSABLE
+const formContainer = document.getElementById('form-container');
+const formHeader = formContainer.querySelector('h3');
+formHeader.addEventListener('click', () => {
+    formContainer.classList.toggle('expanded');
+});
 
-/* --- ESTILOS PARA EL FORMULARIO COLAPSABLE --- */
-#new-point-form {
-    display: none; /* El formulario está oculto por defecto */
-}
+// 7. LÓGICA DEL BOTÓN DE RESET
+const resetButton = document.getElementById('reset-button');
 
-#form-container.expanded #new-point-form {
-    display: block; /* Se muestra cuando el contenedor tiene la clase 'expanded' */
+function resetMap() {
+    geojsonLayer.eachLayer(l => l.setStyle(defaultStyle));
+    map.flyToBounds(bounds);
+    mostrarTodosLosMarcadores();
+    provinciaSeleccionada = null;
 }
-
-/* Flechita indicadora */
-#form-container h3::after {
-    content: ' ▼';
-    font-size: 0.8em;
-    float: right;
-}
-
-#form-container.expanded h3::after {
-    content: ' ▲';
-}
-
-#new-point-form input {
-    width: 95%;
-    padding: 8px;
-    margin-bottom: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-#new-point-form button {
-    width: 100%;
-    padding: 10px;
-    background-color: #F9A620;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-/* Estilos para el Pop-up Personalizado */
-.custom-popup .leaflet-popup-content-wrapper {
-    background: #083D77;
-    color: white;
-    border-radius: 8px;
-    box-shadow: 0 3px 14px rgba(0,0,0,0.4);
-}
-
-.custom-popup .leaflet-popup-content {
-    margin: 15px;
-    line-height: 1.4;
-}
-
-.custom-popup .leaflet-popup-tip-container {
-    display: none;
-}
-
-.custom-popup img {
-    width: 100%;
-    border-radius: 5px;
-    margin-bottom: 10px;
-}
-
-.custom-popup b {
-    font-size: 16px;
-    color: #F9A620;
-}
-
-/* ESTILOS PARA EL NUEVO BOTÓN DE RESET */
-#reset-button {
-    position: absolute;
-    bottom: 20px;
-    left: 10px;
-    z-index: 999; /* Un poco menos que el formulario */
-    background: white;
-    padding: 5px 10px;
-    font-size: 20px;
-    font-weight: bold;
-    border-radius: 5px;
-    box-shadow: 0 1px 5px rgba(0,0,0,0.65);
-    cursor: pointer;
-}
-
-#reset-button:hover {
-    background: #f4f4f4;
-}
+resetButton.addEventListener('click', resetMap);
