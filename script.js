@@ -18,7 +18,6 @@ let todosLosLugares = [];
 let capasProvincias = {};
 let provinciaSeleccionada = null;
 
-// Paleta de colores: Azul petróleo suave y un acento ámbar
 const defaultStyle = { color: "#083D77", weight: 1.5, opacity: 1, fillColor: "#2E628F", fillOpacity: 0.4 };
 const highlightStyle = { color: "#F9A620", weight: 3, opacity: 1, fillColor: "#F9A620", fillOpacity: 0.6 };
 
@@ -107,6 +106,7 @@ Papa.parse(googleSheetURL, {
         mostrarTodosLosMarcadores();
         
         const dataList = document.getElementById('province-list');
+        const dataListForm = document.getElementById('province-list-form');
         const todasLasProvincias = todosLosLugares
             .map(lugar => lugar.provincia ? lugar.provincia.trim() : null)
             .filter(Boolean);
@@ -116,6 +116,7 @@ Papa.parse(googleSheetURL, {
             const option = document.createElement('option');
             option.value = nombreProvincia;
             dataList.appendChild(option);
+            dataListForm.appendChild(option.cloneNode(true));
         });
     }
 });
@@ -140,4 +141,28 @@ searchInput.addEventListener('keyup', function(event) {
     if (event.key === "Enter") {
         buscarProvincia();
     }
+});
+
+// 5. LÓGICA DEL FORMULARIO DE CARGA
+const newPointForm = document.getElementById('new-point-form');
+// ▼▼▼ ¡REEMPLAZA ESTA URL POR LA TUYA! ▼▼▼
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby7Qfv-fl4uifXiL8edLPkHIZXyrpjKvlWmsuYKtLF9ncp6WdWKxJooLWBM46TZUIWA/exec';
+
+newPointForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: new FormData(newPointForm)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.result === 'success') {
+            alert('¡Punto añadido con éxito! El mapa se actualizará en 1-2 minutos. Por favor, recarga la página.');
+            newPointForm.reset();
+        } else {
+            alert('Hubo un error al añadir el punto.');
+        }
+    })
+    .catch(error => console.error('Error:', error));
 });
