@@ -8,33 +8,26 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-
+   
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
 
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div id="formulario-container">
-        <h3>Agregar Nuevo Punto</h3>
-
-        <form id="uploadForm">
-
-            <input type="text" id="nombre" placeholder="Nombre del lugar" required>
-            <input type="text" id="info" placeholder="Descripción" required>
-            <input type="text" id="provincia" placeholder="Provincia (se rellena al buscar)" list="province-list-form" required>
+    <div id="form-container">
+        <h3>Añadir un Nuevo Punto</h3>
+        <form id="new-point-form">
+            <input type="text" name="nombre" placeholder="Nombre del lugar" required>
+            <input type="text" name="lat" placeholder="Latitud (se rellena al buscar)" required>
+            <input type="text" name="lng" placeholder="Longitud (se rellena al buscar)" required>
+            <input type="text" name="info" placeholder="Descripción" required>
+            <input type="text" name="imagen" placeholder="URL de la imagen" required>
+            <input type="text" name="provincia" placeholder="Provincia (se rellena al buscar)" list="province-list-form" required>
             <datalist id="province-list-form"></datalist>
-
-            <input type="text" id="lat" placeholder="Latitud (se rellena al buscar)" required>
-            <input type="text" id="lon" placeholder="Longitud (se rellena al buscar)" required> <label>Subir Imagen:</label>
-            <input type="file" id="file" required accept="image/*">
-
-            <button type="submit">Guardar Punto</button>
+            <button type="submit">Añadir al Mapa</button>
         </form>
-
-        <div id="status"></div>
     </div>
-
 
     <div id="search-container">
         <input type="text" id="province-search" placeholder="Buscar provincia..." list="province-list">
@@ -50,10 +43,11 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-
+   
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
-
+   
     <script src="script.js"></script>
 
 </body>
 </html>
+
