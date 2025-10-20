@@ -5,7 +5,7 @@
 */
 
 // IDs de tu Sheet y Drive (los mismos de antes)
-const SPREADSHEET_ID = "1tG4V-I-4-gAwqM13A0gUpO_sds-5V-fF-wG-Qn_m2-A";
+const SPREADSHEET_ID = "1UIowFWfCqv3v3AZbGkRJhrRNk520_8mxzAtAyraUX6A";
 const DRIVE_FOLDER_ID = "12cEmLYJQvyIZyStKF-YymZIl-7bRikMf";
 const SHEET_NAME = "Hoja 1"; // ¡Asegúrate que este nombre sea correcto!
 
