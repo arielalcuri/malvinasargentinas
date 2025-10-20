@@ -45,10 +45,7 @@ html, body {
     background-color: #2E628F;
 }
 
-/* --- ESTILOS CORREGIDOS PARA EL FORMULARIO --- */
-
-/* ID cambiado a "formulario-container" */
-#formulario-container {
+#form-container {
     position: absolute;
     top: 10px;
     left: 10px;
@@ -58,37 +55,36 @@ html, body {
     border-radius: 8px;
     box-shadow: 0 1px 5px rgba(0,0,0,0.65);
     width: 250px;
-    transition: all 0.3s ease;
+    transition: all 0.3s ease; /* Transición suave */
 }
 
-#formulario-container h3 {
+#form-container h3 {
     margin-top: 0;
     color: #083D77;
-    cursor: pointer;
+    cursor: pointer; /* Indica que el título es clickeable */
 }
 
-/* ID cambiado a "uploadForm" */
-#uploadForm {
-    display: block; /* Lo dejo visible por defecto, puedes cambiarlo a "none" si quieres */
+/* --- ESTILOS PARA EL FORMULARIO COLAPSABLE --- */
+#new-point-form {
+    display: none; /* El formulario está oculto por defecto */
 }
 
-/* Reglas para colapsar (si las necesitas) */
-#formulario-container:not(.expanded) #uploadForm {
-    display: none;
+#form-container.expanded #new-point-form {
+    display: block; /* Se muestra cuando el contenedor tiene la clase 'expanded' */
 }
 
-#formulario-container h3::after {
+/* Flechita indicadora */
+#form-container h3::after {
     content: ' ▼';
     font-size: 0.8em;
     float: right;
 }
 
-#formulario-container.expanded h3::after {
+#form-container.expanded h3::after {
     content: ' ▲';
 }
 
-/* ID cambiado a "uploadForm" */
-#uploadForm input, #uploadForm label {
+#new-point-form input {
     width: 95%;
     padding: 8px;
     margin-bottom: 10px;
@@ -96,13 +92,7 @@ html, body {
     border-radius: 4px;
 }
 
-#uploadForm label {
-    border: none;
-    padding: 0;
-}
-
-/* ID cambiado a "uploadForm" */
-#uploadForm button {
+#new-point-form button {
     width: 100%;
     padding: 10px;
     background-color: #F9A620;
@@ -112,16 +102,6 @@ html, body {
     cursor: pointer;
     font-weight: bold;
 }
-
-/* Div de status para mensajes de subida */
-#status {
-    margin-top: 10px;
-    font-size: 0.9em;
-    color: #083D77;
-}
-
-/* --- FIN DE ESTILOS DE FORMULARIO --- */
-
 
 /* Estilos para el Pop-up Personalizado */
 .custom-popup .leaflet-popup-content-wrapper {
@@ -156,7 +136,7 @@ html, body {
     position: absolute;
     bottom: 20px;
     left: 10px;
-    z-index: 999;
+    z-index: 999; /* Un poco menos que el formulario */
     background: white;
     padding: 5px 10px;
     font-size: 20px;
