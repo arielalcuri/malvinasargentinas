@@ -5,7 +5,7 @@
 */
 
 // ⬇️ PEGA AQUÍ LA URL DE TU SCRIPT DE GOOGLE (termina en /exec)
-const GAS_WEB_APP_URL = "https://script.google.com/macros/s/TU_URL_AQUI/exec";
+const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxQTtEPpn1Yrm0NeSDvmxMrNhjZOv27K73ofRrnyH60x8VtCxglui3G7i9FWf2kXpLM/exec";
 
 // Espera a que todo el HTML esté cargado
 document.addEventListener('DOMContentLoaded', (event) => {
