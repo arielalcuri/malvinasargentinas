@@ -1,201 +1,58 @@
-// 1. INICIALIZAR EL MAPA
-const map = L.map('map');
+/* =================================
+  NUEVA FUNCIÓN doPost - ACTUALIZADA
+  Esta versión acepta los campos: nombre, info, provincia
+ =================================
+*/
 
-const southWest = L.latLng(-57, -75);
-const northEast = L.latLng(-20, -52);
-const bounds = L.latLngBounds(southWest, northEast);
+// IDs de tu Sheet y Drive (los mismos de antes)
+const SPREADSHEET_ID = "1tG4V-I-4-gAwqM13A0gUpO_sds-5V-fF-wG-Qn_m2-A";
+const DRIVE_FOLDER_ID = "12cEmLYJQvyIZyStKF-YymZIl-7bRikMf";
+const SHEET_NAME = "Hoja 1"; // ¡Asegúrate que este nombre sea correcto!
 
-map.fitBounds(bounds);
-map.setMaxBounds(bounds);
-map.setMinZoom(4);
+function doPost(e) {
 
-L.tileLayer('https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/capabaseargenmap@EPSG%3A3857@png/{z}/{x}/{-y}.png', {
-    attribution: '<a href="http://www.ign.gob.ar" target="_blank">Instituto Geográfico Nacional</a>'
-}).addTo(map);
+  try {
+    const data = JSON.parse(e.postData.contents);
 
-const markersLayer = L.layerGroup().addTo(map);
-let todosLosLugares = [];
-let capasProvincias = {};
-let provinciaSeleccionada = null;
-let geojsonLayer = null; // Variable para guardar la capa de provincias
+    // --- NUEVO: Leemos los campos adicionales ---
+    const nombre = data.nombre;
+    const info = data.info;
+    const provincia = data.provincia;
+    // --- Fin de lo nuevo ---
 
-const defaultStyle = { color: "#083D77", weight: 1.5, opacity: 1, fillColor: "#2E628F", fillOpacity: 0.4, "interactive": true };
-const highlightStyle = { color: "#F9A620", weight: 3, opacity: 1, fillColor: "#F9A620", fillOpacity: 0.6, "interactive": true };
-const hiddenStyle = { opacity: 0, fillOpacity: 0, "interactive": false }; // Estilo para ocultar
+    // Campos que ya teníamos
+    const lat = data.lat;
+    const lon = data.lon;
+    const fileName = data.fileName;
+    const fileData = data.fileData;
 
-// 2. LÓGICA DE LAS PROVINCIAS Y FILTRADO
-function mostrarTodosLosMarcadores() {
-    markersLayer.clearLayers();
-    todosLosLugares.forEach(lugar => {
-        if (lugar.lat && lugar.lng) {
-            L.marker([lugar.lat, lugar.lng])
-                .addTo(markersLayer)
-                .bindPopup(`
-                    <img src="${lugar.imagen}" alt="Imagen de ${lugar.nombre}" />
-                    <b>${lugar.nombre}</b><br>${lugar.info}
-                `, { className: 'custom-popup' });
-        }
-    });
+    // 2. Decodificar la imagen
+    const contentType = fileData.substring(fileData.indexOf(':') + 1, fileData.indexOf(';'));
+    const base64Data = fileData.substring(fileData.indexOf(',') + 1);
+    const fileBlob = Utilities.newBlob(Utilities.base64Decode(base64Data), contentType, fileName);
+
+    // 3. Guardar en Google Drive
+    const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
+    const driveFile = folder.createFile(fileBlob);
+    driveFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    const imageUrl = driveFile.getUrl();
+
+    // 4. Guardar en Google Sheet
+    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SHEET_NAME);
+
+    // --- ACTUALIZADO: Añadimos las nuevas columnas ---
+    // ¡ASEGÚRATE DE QUE ESTE ORDEN (A, B, C, D, E, F) COINCIDA CON TU GOOGLE SHEET!
+    sheet.appendRow([lat, lon, imageUrl, nombre, info, provincia]);
+
+    // 5. Enviar respuesta de ÉXITO
+    return ContentService
+      .createTextOutput(JSON.stringify({ status: "success", message: "Punto guardado" }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (error) {
+    Logger.log(error);
+    return ContentService
+      .createTextOutput(JSON.stringify({ status: "error", message: error.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 }
-
-function mostrarMarcadoresDeProvincia(nombreProvincia) {
-    markersLayer.clearLayers();
-    const lugaresDeLaProvincia = todosLosLugares.filter(lugar => lugar.provincia && lugar.provincia.trim() === nombreProvincia);
-    lugaresDeLaProvincia.forEach(lugar => {
-        if (lugar.lat && lugar.lng) {
-            L.marker([lugar.lat, lugar.lng])
-                .addTo(markersLayer)
-                .bindPopup(`
-                    <img src="${lugar.imagen}" alt="Imagen de ${lugar.nombre}" />
-                    <b>${lugar.nombre}</b><br>${lugar.info}
-                `, { className: 'custom-popup' });
-        }
-    });
-}
-
-// --- FUNCIÓN onProvinceClick MODIFICADA ---
-function onProvinceClick(e) {
-    const layer = e.target;
-    const nombreProvincia = layer.feature.properties.nombre;
-
-    // 1. Ocultamos todas las provincias
-    geojsonLayer.eachLayer(l => l.setStyle(hiddenStyle));
-    
-    // 2. Resaltamos y traemos al frente solo la seleccionada
-    layer.setStyle(highlightStyle);
-    layer.bringToFront();
-    provinciaSeleccionada = layer;
-
-    // 3. Zoom animado a la provincia
-    map.flyToBounds(layer.getBounds());
-
-    // 4. Mostramos solo los marcadores de esa provincia
-    mostrarMarcadoresDeProvincia(nombreProvincia);
-}
-
-function onEachFeature(feature, layer) {
-    const nombreProvincia = feature.properties.nombre;
-    capasProvincias[nombreProvincia.toLowerCase().trim()] = layer;
-    layer.on({
-        click: onProvinceClick,
-        mouseover: function (e) {
-            const hoveredLayer = e.target;
-            if (hoveredLayer !== provinciaSeleccionada) {
-                hoveredLayer.setStyle({ weight: 3, color: '#F9A620', fillOpacity: 0.6 });
-            }
-        },
-        mouseout: function (e) {
-            const hoveredLayer = e.target;
-            if (hoveredLayer !== provinciaSeleccionada) {
-                hoveredLayer.setStyle(defaultStyle);
-            }
-        }
-    });
-}
-
-fetch('provincias.geojson')
-    .then(response => response.json())
-    .then(data => {
-        // Guardamos la capa en nuestra variable global
-        geojsonLayer = L.geoJSON(data, {
-            onEachFeature: onEachFeature,
-            style: defaultStyle
-        }).addTo(map);
-    })
-    .catch(error => console.error('Error al cargar las provincias:', error));
-
-// 3. CARGAR DATOS Y POBLAR EL BUSCADOR
-// ... (Esta sección no cambia) ...
-const googleSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTozxVh-G1pmH5SPMY3GTizIK1I8l_a6PX6ZE5z3J0Gq3r9-xAmh8_9YmyIkvx3CwAXCCWC6zHmt3pU/pub?gid=0&single=true&output=csv';
-Papa.parse(googleSheetURL, {
-    download: true,
-    header: true,
-    complete: function(results) {
-        todosLosLugares = results.data;
-        mostrarTodosLosMarcadores();
-        
-        const dataList = document.getElementById('province-list');
-        const dataListForm = document.getElementById('province-list-form');
-        const todasLasProvincias = todosLosLugares
-            .map(lugar => lugar.provincia ? lugar.provincia.trim() : null)
-            .filter(Boolean);
-        const provinciasUnicas = [...new Set(todasLasProvincias)];
-        
-        provinciasUnicas.forEach(nombreProvincia => {
-            const option = document.createElement('option');
-            option.value = nombreProvincia;
-            dataList.appendChild(option);
-            dataListForm.appendChild(option.cloneNode(true));
-        });
-    }
-});
-
-// 4. LÓGICA DEL BUSCADOR
-// ... (Esta sección no cambia) ...
-const searchButton = document.getElementById('search-button');
-const searchInput = document.getElementById('province-search');
-function buscarProvincia() {
-    const searchTerm = searchInput.value.trim().toLowerCase();
-    const provinciaLayer = capasProvincias[searchTerm];
-    if (provinciaLayer) {
-        provinciaLayer.fire('click');
-        searchInput.value = '';
-    } else {
-        alert("Provincia no encontrada. Por favor, selecciona un nombre de la lista.");
-    }
-}
-searchButton.addEventListener('click', buscarProvincia);
-searchInput.addEventListener('keyup', function(event) {
-    if (event.key === "Enter") {
-        buscarProvincia();
-    }
-});
-
-// 5. LÓGICA DEL FORMULARIO DE CARGA
-// ... (Esta sección no cambia) ...
-const newPointForm = document.getElementById('new-point-form');
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby7Qfv-fl4uifXiL8edLPkHIZXyrpjKvlWmsuYKtLF9ncp6WdWKxJooLWBM46TZUIWA/exec'; // ¡Recuerda poner tu URL!
-newPointForm.addEventListener('submit', function(e) {
-    e.preventDefault();
-    fetch(SCRIPT_URL, {
-        method: 'POST',
-        body: new FormData(newPointForm)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.result === 'success') {
-            alert('¡Punto añadido con éxito! El mapa se actualizará en 1-2 minutos. Por favor, recarga la página.');
-            newPointForm.reset();
-        } else {
-            alert('Hubo un error al añadir el punto.');
-        }
-    })
-    .catch(error => console.error('Error:', error));
-});
-
-// 6. LÓGICA DEL FORMULARIO COLAPSABLE
-// ... (Esta sección no cambia) ...
-const formContainer = document.getElementById('form-container');
-const formHeader = formContainer.querySelector('h3');
-formHeader.addEventListener('click', () => {
-    formContainer.classList.toggle('expanded');
-});
-
-// --- 7. LÓGICA DEL BOTÓN DE RESET ---
-const resetButton = document.getElementById('reset-button');
-
-function resetMap() {
-    // 1. Mostramos todas las provincias
-    geojsonLayer.eachLayer(l => l.setStyle(defaultStyle));
-    
-    // 2. Reseteamos el zoom
-    map.flyToBounds(bounds);
-    
-    // 3. Mostramos todos los marcadores
-    mostrarTodosLosMarcadores();
-    
-    // 4. Limpiamos la selección
-    provinciaSeleccionada = null;
-}
-
-resetButton.addEventListener('click', resetMap);
