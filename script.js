@@ -93,7 +93,7 @@ function onEachFeature(feature, layer) {
     });
 }
 
-fetch('provincias.geojson')
+fetch('/provincias.geojson')
     .then(response => response.json())
     .then(data => {
         // Guardamos la capa en nuestra variable global
