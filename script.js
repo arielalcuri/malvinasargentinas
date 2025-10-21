@@ -152,8 +152,8 @@ searchInput.addEventListener('keyup', function(event) {
 // --- 5. LÓGICA DEL FORMULARIO DE CARGA (MODIFICADA PARA CLOUDINARY) ---
 
 // ++ Pega tus constantes de Cloudinary aquí ++
-const CLOUD_NAME = "TU_CLOUD_NAME";
-const UPLOAD_PRESET = "TU_UPLOAD_PRESET";
+const CLOUD_NAME = "dm11xhsaq";
+const UPLOAD_PRESET = "mapa-interactivo-malvinas";
 const urlApiCloudinary = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
 
 const newPointForm = document.getElementById('new-point-form');
