@@ -60,7 +60,7 @@ function onProvinceClick(e) {
 
     // 1. Ocultamos todas las provincias
     geojsonLayer.eachLayer(l => l.setStyle(hiddenStyle));
-   
+    
     // 2. Resaltamos y traemos al frente solo la seleccionada
     layer.setStyle(highlightStyle);
     layer.bringToFront();
@@ -105,7 +105,6 @@ fetch('provincias.geojson')
     .catch(error => console.error('Error al cargar las provincias:', error));
 
 // 3. CARGAR DATOS Y POBLAR EL BUSCADOR
-// ... (Esta sección no cambia) ...
 const googleSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTozxVh-G1pmH5SPMY3GTizIK1I8l_a6PX6ZE5z3J0Gq3r9-xAmh8_9YmyIkvx3CwAXCCWC6zHmt3pU/pub?gid=0&single=true&output=csv';
 Papa.parse(googleSheetURL, {
     download: true,
@@ -113,14 +112,14 @@ Papa.parse(googleSheetURL, {
     complete: function(results) {
         todosLosLugares = results.data;
         mostrarTodosLosMarcadores();
-       
+        
         const dataList = document.getElementById('province-list');
         const dataListForm = document.getElementById('province-list-form');
         const todasLasProvincias = todosLosLugares
             .map(lugar => lugar.provincia ? lugar.provincia.trim() : null)
             .filter(Boolean);
         const provinciasUnicas = [...new Set(todasLasProvincias)];
-       
+        
         provinciasUnicas.forEach(nombreProvincia => {
             const option = document.createElement('option');
             option.value = nombreProvincia;
@@ -131,7 +130,6 @@ Papa.parse(googleSheetURL, {
 });
 
 // 4. LÓGICA DEL BUSCADOR
-// ... (Esta sección no cambia) ...
 const searchButton = document.getElementById('search-button');
 const searchInput = document.getElementById('province-search');
 function buscarProvincia() {
@@ -151,15 +149,72 @@ searchInput.addEventListener('keyup', function(event) {
     }
 });
 
-// 5. LÓGICA DEL FORMULARIO DE CARGA
-// ... (Esta sección no cambia) ...
+// --- 5. LÓGICA DEL FORMULARIO DE CARGA (MODIFICADA PARA CLOUDINARY) ---
+
+// ++ Pega tus constantes de Cloudinary aquí ++
+const CLOUD_NAME = "TU_CLOUD_NAME";
+const UPLOAD_PRESET = "TU_UPLOAD_PRESET";
+const urlApiCloudinary = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
+
 const newPointForm = document.getElementById('new-point-form');
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby7Qfv-fl4uifXiL8edLPkHIZXyrpjKvlWmsuYKtLF9ncp6WdWKxJooLWBM46TZUIWA/exec'; // ¡Recuerda poner tu URL!
-newPointForm.addEventListener('submit', function(e) {
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby7Qfv-fl4uifXiL8edLPkHIZXyrpjKvlWmsuYKtLF9ncp6WdWKxJooLWBM46TZUIWA/exec'; // URL del usuario
+
+// ++ Convertimos la función del listener en ASYNC para poder usar 'await' ++
+newPointForm.addEventListener('submit', async function(e) {
     e.preventDefault();
+
+    // ++ Referencias a los nuevos elementos del formulario ++
+    const archivoInput = document.getElementById('punto-imagen-upload');
+    const hiddenImagenInput = document.getElementById('imagen-url-hidden');
+    const submitButton = newPointForm.querySelector('button[type="submit"]');
+    const archivo = archivoInput.files[0];
+
+    // --- 1. PROCESO DE SUBIDA A CLOUDINARY ---
+    // Esto solo se ejecuta si el usuario seleccionó un archivo
+    if (archivo) {
+        submitButton.disabled = true;
+        submitButton.textContent = "Subiendo imagen...";
+
+        const formDataCloudinary = new FormData();
+        formDataCloudinary.append('file', archivo);
+        formDataCloudinary.append('upload_preset', UPLOAD_PRESET);
+
+        try {
+            const respuesta = await fetch(urlApiCloudinary, {
+                method: 'POST',
+                body: formDataCloudinary
+            });
+            
+            if (!respuesta.ok) throw new Error('Error al subir a Cloudinary');
+            
+            const dataCloudinary = await respuesta.json();
+            
+            // ++ ¡Éxito! Ponemos la URL obtenida en el input oculto ++
+            hiddenImagenInput.value = dataCloudinary.secure_url; 
+            console.log("Imagen subida:", hiddenImagenInput.value);
+
+        } catch (error) {
+            console.error('Error en Cloudinary:', error);
+            alert("Hubo un error al subir la imagen. Intenta de nuevo.");
+            submitButton.disabled = false;
+            submitButton.textContent = "Añadir al Mapa";
+            return; // Detenemos la función si falla la subida de imagen
+        }
+    } else {
+        // ++ Si el campo 'required' falla por alguna razón, nos aseguramos de que no envíe nada ++
+        hiddenImagenInput.value = ''; 
+    }
+
+    // --- 2. PROCESO DE ENVÍO A GOOGLE SCRIPT (CÓDIGO ORIGINAL) ---
+    
+    console.log("Enviando a Google Script...");
+    submitButton.textContent = "Guardando punto..."; // ++ Nuevo estado de carga ++
+
+    // Esta línea ahora usa new FormData(newPointForm) que INCLUYE
+    // el input oculto 'imagen' con la URL de Cloudinary.
     fetch(SCRIPT_URL, {
         method: 'POST',
-        body: new FormData(newPointForm)
+        body: new FormData(newPointForm) 
     })
     .then(response => response.json())
     .then(data => {
@@ -170,11 +225,19 @@ newPointForm.addEventListener('submit', function(e) {
             alert('Hubo un error al añadir el punto.');
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => {
+        console.error('Error en Google Script:', error);
+        alert('Hubo un error al guardar el punto.');
+    })
+    .finally(() => {
+        // ++ Reactivamos el botón al finalizar (éxito o error) ++
+        submitButton.disabled = false;
+        submitButton.textContent = "Añadir al Mapa";
+    });
 });
 
+
 // 6. LÓGICA DEL FORMULARIO COLAPSABLE
-// ... (Esta sección no cambia) ...
 const formContainer = document.getElementById('form-container');
 const formHeader = formContainer.querySelector('h3');
 formHeader.addEventListener('click', () => {
@@ -186,17 +249,18 @@ const resetButton = document.getElementById('reset-button');
 
 function resetMap() {
     // 1. Mostramos todas las provincias
-    geojsonLayer.eachLayer(l => l.setStyle(defaultStyle));
-   
+    if (geojsonLayer) {
+        geojsonLayer.eachLayer(l => l.setStyle(defaultStyle));
+    }
+    
     // 2. Reseteamos el zoom
     map.flyToBounds(bounds);
-   
+    
     // 3. Mostramos todos los marcadores
     mostrarTodosLosMarcadores();
-   
+    
     // 4. Limpiamos la selección
     provinciaSeleccionada = null;
 }
 
 resetButton.addEventListener('click', resetMap);
-
