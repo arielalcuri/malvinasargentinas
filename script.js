@@ -86,7 +86,7 @@ function onEachFeature(feature, layer) {
     });
 }
 
-// *** IMPORTANTE: Asegúrate de que la ruta tenga './' al principio ***
+// Ruta corregida para GitHub Pages
 fetch('./provincias.geojson')
     .then(response => response.json())
     .then(data => {
@@ -144,15 +144,13 @@ searchInput.addEventListener('keyup', function(event) {
 
 // --- 5. LÓGICA DEL FORMULARIO DE CARGA (EXIF, CLOUDINARY y GOOGLE SCRIPT) ---
 
-// *** ¡REEMPLAZA ESTOS VALORES! ***
-const CLOUD_NAME = "dm11xhsaq"; // (¡Este es tu Cloud Name!)
-const UPLOAD_PRESET = "mapa-interactivo-malvinas"; // (¡Este es tu Preset!)
-// **********************************
-
+// --- Constantes de Cloudinary y Google Apps Script ---
+const CLOUD_NAME = "dm11xhsaq";
+const UPLOAD_PRESET = "mapa-interactivo-malvinas";
 const urlApiCloudinary = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby7Qfv-fl4uifXiL8edLPkHIZXyrpjKvlWmsuYKtLF9ncp6WdWKxJooLWBM46TZUIWA/exec'; // URL del usuario
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby7Qfv-fl4uifXiL8edLPkHIZXyrpjKvlWmsuYKtLF9ncp6WdWKxJooLWBM46TZUIWA/exec';
 
-// Referencias a los elementos del formulario
+// --- Referencias a los elementos del formulario ---
 const newPointForm = document.getElementById('new-point-form');
 const archivoInput = document.getElementById('punto-imagen-upload');
 const hiddenImagenInput = document.getElementById('imagen-url-hidden');
@@ -160,11 +158,19 @@ const inputLat = document.getElementById('form-lat');
 const inputLng = document.getElementById('form-lng');
 const exifStatus = document.getElementById('exif-status');
 
+// --- Referencias para el Login (se usan en Sección 6) ---
+const loginModal = document.getElementById('login-modal-overlay');
+const loginForm = document.getElementById('login-form');
+const loginError = document.getElementById('login-error');
+const loginCancelButton = document.getElementById('login-cancel-button');
+const formContainer = document.getElementById('form-container');
+const formHeader = formContainer.querySelector('h3');
+
+
 // --- Función Helper para EXIF ---
 // Convierte Grados, Minutos, Segundos (DMS) a Grados Decimales (DD)
 function dmsToDd(grados, minutos, segundos, direccion) {
     let dd = grados + minutos / 60 + segundos / 3600;
-    // Las latitudes Sur (S) y longitudes Oeste (W) son negativas
     if (direccion === "S" || direccion === "W") {
         dd = dd * -1;
     }
@@ -177,13 +183,10 @@ archivoInput.addEventListener('change', function(e) {
     if (!file) {
         return;
     }
-
-    // Reseteamos los campos y el estado
     inputLat.value = '';
     inputLng.value = '';
     exifStatus.style.display = 'none';
 
-    // Usamos la librería EXIF.js
     EXIF.getData(file, function() {
         const lat = EXIF.getTag(this, "GPSLatitude");
         const lng = EXIF.getTag(this, "GPSLongitude");
@@ -191,29 +194,24 @@ archivoInput.addEventListener('change', function(e) {
         const lngRef = EXIF.getTag(this, "GPSLongitudeRef");
 
         if (lat && lng && latRef && lngRef) {
-            // ¡Éxito! Convertimos los datos
             const decimalLat = dmsToDd(lat[0], lat[1], lat[2], latRef);
             const decimalLng = dmsToDd(lng[0], lng[1], lng[2], lngRef);
 
-            // Rellenamos los campos del formulario
-            inputLat.value = decimalLat.toFixed(6); // .toFixed(6) para 6 decimales
+            inputLat.value = decimalLat.toFixed(6);
             inputLng.value = decimalLng.toFixed(6);
 
-            // Mostramos un mensaje de éxito
             exifStatus.textContent = "¡Coordenadas GPS encontradas!";
             exifStatus.style.color = "#083D77";
             exifStatus.style.display = 'block';
+            inputLat.readOnly = true;
+            inputLng.readOnly = true;
 
-            // Movemos el mapa a esa ubicación y añadimos un marcador temporal
-            map.flyTo([decimalLat, decimalLng], 12); // Zoom 12
+            map.flyTo([decimalLat, decimalLng], 12);
 
         } else {
-            // No se encontraron datos GPS
-            exifStatus.textContent = "La imagen no tiene datos GPS. Debe añadirlos manualmente.";
+            exifStatus.textContent = "La imagen no tiene datos GPS. Debe añadirlos manually.";
             exifStatus.style.color = "red";
             exifStatus.style.display = 'block';
-            
-            // Hacemos los campos editables si no hay GPS
             inputLat.readOnly = false;
             inputLng.readOnly = false;
             inputLat.placeholder = "Latitud (manual)";
@@ -230,7 +228,6 @@ newPointForm.addEventListener('submit', async function(e) {
     const submitButton = newPointForm.querySelector('button[type="submit"]');
     const archivo = archivoInput.files[0];
 
-    // Verificamos que los campos de lat/lng no estén vacíos
     if (!inputLat.value || !inputLng.value) {
         alert("Por favor, asegúrese de que la imagen tenga GPS o rellene la latitud y longitud manualmente.");
         return;
@@ -250,13 +247,9 @@ newPointForm.addEventListener('submit', async function(e) {
                 method: 'POST',
                 body: formDataCloudinary
             });
-            
             if (!respuesta.ok) throw new Error('Error al subir a Cloudinary');
-            
             const dataCloudinary = await respuesta.json();
-            
-            // ¡Éxito! Ponemos la URL obtenida en el input oculto
-            hiddenImagenInput.value = dataCloudinary.secure_url; 
+            hiddenImagenInput.value = dataCloudinary.secure_url;
             console.log("Imagen subida:", hiddenImagenInput.value);
 
         } catch (error) {
@@ -264,34 +257,36 @@ newPointForm.addEventListener('submit', async function(e) {
             alert("Hubo un error al subir la imagen. Intenta de nuevo.");
             submitButton.disabled = false;
             submitButton.textContent = "Añadir al Mapa";
-            return; // Detenemos la función si falla la subida de imagen
+            return;
         }
     } else {
-        // Esto no debería pasar por el 'required' del HTML, pero es una validación extra
         alert("Por favor, selecciona un archivo de imagen.");
         return;
     }
 
     // --- 2. PROCESO DE ENVÍO A GOOGLE SCRIPT ---
-    
     console.log("Enviando a Google Script...");
     submitButton.textContent = "Guardando punto...";
 
+    // Creamos un FormData nuevo para añadir el parámetro 'action'
+    const pointFormData = new FormData(newPointForm);
+    pointFormData.append('action', 'addPoint'); // Le decimos al script que es para "Añadir Punto"
+
     fetch(SCRIPT_URL, {
         method: 'POST',
-        body: new FormData(newPointForm) 
+        body: pointFormData // Usamos el nuevo FormData
     })
     .then(response => response.json())
     .then(data => {
         if (data.result === 'success') {
             alert('¡Punto añadido con éxito! El mapa se actualizará en 1-2 minutos. Por favor, recarga la página.');
             newPointForm.reset();
-            // Reseteamos el estado del formulario EXIF
             exifStatus.style.display = 'none';
             inputLat.readOnly = true;
             inputLng.readOnly = true;
             inputLat.placeholder = "Latitud (automática)";
             inputLng.placeholder = "Longitud (automática)";
+            formContainer.classList.remove('expanded'); // Oculta el formulario después de enviar
         } else {
             alert('Hubo un error al añadir el punto.');
         }
@@ -301,36 +296,90 @@ newPointForm.addEventListener('submit', async function(e) {
         alert('Hubo un error al guardar el punto.');
     })
     .finally(() => {
-        // Reactivamos el botón al finalizar (éxito o error)
         submitButton.disabled = false;
         submitButton.textContent = "Añadir al Mapa";
     });
 });
 
 
-// 6. LÓGICA DEL FORMULARIO COLAPSABLE
-const formContainer = document.getElementById('form-container');
-const formHeader = formContainer.querySelector('h3');
+// 6. LÓGICA DEL LOGIN Y FORMULARIO (NUEVA)
+let isLoggedIn = false; // Variable global para saber si está logueado
+
 formHeader.addEventListener('click', () => {
-    formContainer.classList.toggle('expanded');
+    if (isLoggedIn) {
+        // Si ya inició sesión, simplemente expande/contrae el formulario
+        formContainer.classList.toggle('expanded');
+    } else {
+        // Si no ha iniciado sesión, muestra el modal de login
+        loginModal.classList.add('visible');
+    }
+});
+
+// -- Listener para el botón de cancelar del modal --
+loginCancelButton.addEventListener('click', () => {
+    loginModal.classList.remove('visible');
+    loginError.style.display = 'none';
+    loginForm.reset();
+});
+
+// -- Listener para el formulario de LOGIN --
+loginForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    
+    const cuil = document.getElementById('login-cuil').value;
+    const pass = document.getElementById('login-pass').value;
+    const loginButton = document.getElementById('login-button');
+
+    loginButton.disabled = true;
+    loginButton.textContent = "Verificando...";
+    loginError.style.display = 'none';
+
+    const formData = new FormData();
+    formData.append('action', 'login'); // ¡Le decimos al script que esta es una acción de login!
+    formData.append('cuil', cuil);
+    formData.append('pass', pass);
+
+    fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.result === 'success') {
+            // ¡ÉXITO!
+            isLoggedIn = true;
+            loginModal.classList.remove('visible'); // Oculta el modal
+            formContainer.classList.add('visible'); // Muestra el formulario de añadir punto
+            formContainer.classList.add('expanded'); // Y lo expande
+        } else {
+            // Error
+            loginError.textContent = data.message || "CUIL o contraseña incorrectos";
+            loginError.style.display = 'block';
+        }
+    })
+    .catch(error => {
+        console.error('Error en Login:', error);
+        loginError.textContent = "Error de conexión con el servidor.";
+        loginError.style.display = 'block';
+    })
+    .finally(() => {
+        loginButton.disabled = false;
+        loginButton.textContent = "Ingresar";
+        if (!isLoggedIn) {
+            loginForm.reset(); // Solo resetea si falló
+        }
+    });
 });
 
 // --- 7. LÓGICA DEL BOTÓN DE RESET ---
 const resetButton = document.getElementById('reset-button');
 
 function resetMap() {
-    // 1. Mostramos todas las provincias
     if (geojsonLayer) {
         geojsonLayer.eachLayer(l => l.setStyle(defaultStyle));
     }
-    
-    // 2. Reseteamos el zoom
     map.flyToBounds(bounds);
-    
-    // 3. Mostramos todos los marcadores
     mostrarTodosLosMarcadores();
-    
-    // 4. Limpiamos la selección
     provinciaSeleccionada = null;
 }
 
