@@ -349,7 +349,7 @@ loginForm.addEventListener('submit', (e) => {
             // ¡ÉXITO!
             isLoggedIn = true;
             loginModal.classList.remove('visible'); // Oculta el modal
-            formContainer.classList.add('visible'); // Muestra el formulario de añadir punto
+            // CORRECCIÓN: Borramos la línea 'formContainer.classList.add('visible');'
             formContainer.classList.add('expanded'); // Y lo expande
         } else {
             // Error
