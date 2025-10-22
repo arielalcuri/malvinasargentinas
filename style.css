@@ -45,7 +45,10 @@ html, body {
     background-color: #2E628F;
 }
 
+/* --- ESTILOS PARA EL FORMULARIO COLAPSABLE --- */
+/* Modificado para que esté oculto por defecto */
 #form-container {
+    display: none; /* Oculto hasta que el login es exitoso */
     position: absolute;
     top: 10px;
     left: 10px;
@@ -55,16 +58,20 @@ html, body {
     border-radius: 8px;
     box-shadow: 0 1px 5px rgba(0,0,0,0.65);
     width: 250px;
-    transition: all 0.3s ease; /* Transición suave */
+    transition: all 0.3s ease;
+}
+
+/* Regla para mostrarlo con JS */
+#form-container.visible {
+    display: block;
 }
 
 #form-container h3 {
     margin-top: 0;
     color: #083D77;
-    cursor: pointer; /* Indica que el título es clickeable */
+    cursor: pointer;
 }
 
-/* --- ESTILOS PARA EL FORMULARIO COLAPSABLE --- */
 #new-point-form {
     display: none; /* El formulario está oculto por defecto */
 }
@@ -73,7 +80,6 @@ html, body {
     display: block; /* Se muestra cuando el contenedor tiene la clase 'expanded' */
 }
 
-/* Flechita indicadora */
 #form-container h3::after {
     content: ' ▼';
     font-size: 0.8em;
@@ -93,7 +99,6 @@ html, body {
     border-radius: 4px;
 }
 
-/* Estilo para los campos de solo lectura */
 #new-point-form input[readonly] {
     background-color: #eee;
     cursor: not-allowed;
@@ -110,40 +115,24 @@ html, body {
     font-weight: bold;
 }
 
-/* Estilos para el Pop-up Personalizado */
+/* --- ESTILOS PARA EL POP-UP --- */
 .custom-popup .leaflet-popup-content-wrapper {
     background: #083D77;
     color: white;
     border-radius: 8px;
     box-shadow: 0 3px 14px rgba(0,0,0,0.4);
 }
+.custom-popup .leaflet-popup-content { margin: 15px; line-height: 1.4; }
+.custom-popup .leaflet-popup-tip-container { display: none; }
+.custom-popup img { width: 100%; border-radius: 5px; margin-bottom: 10px; }
+.custom-popup b { font-size: 16px; color: #F9A620; }
 
-.custom-popup .leaflet-popup-content {
-    margin: 15px;
-    line-height: 1.4;
-}
-
-.custom-popup .leaflet-popup-tip-container {
-    display: none;
-}
-
-.custom-popup img {
-    width: 100%;
-    border-radius: 5px;
-    margin-bottom: 10px;
-}
-
-.custom-popup b {
-    font-size: 16px;
-    color: #F9A620;
-}
-
-/* ESTILOS PARA EL NUEVO BOTÓN DE RESET */
+/* --- ESTILOS PARA EL BOTÓN DE RESET --- */
 #reset-button {
     position: absolute;
     bottom: 20px;
     left: 10px;
-    z-index: 999; /* Un poco menos que el formulario */
+    z-index: 999;
     background: white;
     padding: 5px 10px;
     font-size: 20px;
@@ -152,23 +141,10 @@ html, body {
     box-shadow: 0 1px 5px rgba(0,0,0,0.65);
     cursor: pointer;
 }
+#reset-button:hover { background: #f4f4f4; }
 
-#reset-button:hover {
-    background: #f4f4f4;
-}
 
 /* --- ESTILOS PARA EL MODAL DE LOGIN (NUEVO) --- */
-
-/* Oculta el formulario de añadir punto por defecto */
-#form-container {
-    display: none;
-}
-/* Lo mostramos con JS solo si el login es exitoso */
-#form-container.visible {
-    display: block;
-}
-
-/* El fondo oscuro del modal */
 #login-modal-overlay {
     display: none; /* Oculto por defecto */
     position: fixed;
@@ -177,15 +153,15 @@ html, body {
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.6);
-    z-index: 2000; /* Encima de todo */
+    z-index: 2000;
     justify-content: center;
     align-items: center;
 }
+/* Regla para mostrarlo con JS */
 #login-modal-overlay.visible {
-    display: flex; /* Se muestra con JS */
+    display: flex;
 }
 
-/* La caja blanca del modal */
 #login-modal-box {
     background: white;
     padding: 25px;
@@ -194,10 +170,7 @@ html, body {
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
 
-#login-modal-box h3 {
-    margin-top: 0;
-    color: #083D77;
-}
+#login-modal-box h3 { margin-top: 0; color: #083D77; }
 
 #login-form input {
     width: 95%;
@@ -219,7 +192,6 @@ html, body {
     margin-top: 5px;
 }
 
-/* Botón de cancelar */
 #login-form #login-cancel-button {
     background-color: #aaa;
 }
