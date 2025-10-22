@@ -23,6 +23,50 @@ const defaultStyle = { color: "#083D77", weight: 1.5, opacity: 1, fillColor: "#2
 const highlightStyle = { color: "#F9A620", weight: 3, opacity: 1, fillColor: "#F9A620", fillOpacity: 0.6, "interactive": true };
 const hiddenStyle = { opacity: 0, fillOpacity: 0, "interactive": false }; // Estilo para ocultar
 
+// ++ CAMBIO 1: AÑADIMOS LA LISTA MAESTRA DE JURISDICCIONES ++
+const JURISDICCIONES_ARG = [
+    "Buenos Aires",
+    "Catamarca",
+    "Chaco",
+    "Chubut",
+    "Ciudad Autónoma de Buenos Aires",
+    "Córdoba",
+    "Corrientes",
+    "Entre Ríos",
+    "Formosa",
+    "Jujuy",
+    "La Pampa",
+    "La Rioja",
+    "Mendoza",
+    "Misiones",
+    "Neuquén",
+    "Río Negro",
+    "Salta",
+    "San Juan",
+    "San Luis",
+    "Santa Cruz",
+    "Santa Fe",
+    "Santiago del Estero",
+    "Tierra del Fuego, Antártida e Islas del Atlántico Sur",
+    "Tucumán"
+];
+
+// ++ CAMBIO 2: AÑADIMOS LA FUNCIÓN PARA POBLAR EL FORMULARIO ++
+function popularListaProvinciasForm() {
+    const dataListForm = document.getElementById('province-list-form');
+    // Limpiamos por si acaso
+    dataListForm.innerHTML = ''; 
+    
+    JURISDICCIONES_ARG.forEach(nombreProvincia => {
+        const option = document.createElement('option');
+        option.value = nombreProvincia;
+        dataListForm.appendChild(option);
+    });
+}
+// La llamamos una vez al cargar la página
+popularListaProvinciasForm();
+
+
 // 2. LÓGICA DE LAS PROVINCIAS Y FILTRADO
 function mostrarTodosLosMarcadores() {
     markersLayer.clearLayers();
@@ -107,7 +151,7 @@ Papa.parse(googleSheetURL, {
         mostrarTodosLosMarcadores();
         
         const dataList = document.getElementById('province-list');
-        const dataListForm = document.getElementById('province-list-form');
+        // const dataListForm = document.getElementById('province-list-form'); // Ya no necesitamos esta
         const todasLasProvincias = todosLosLugares
             .map(lugar => lugar.provincia ? lugar.provincia.trim() : null)
             .filter(Boolean);
@@ -117,7 +161,9 @@ Papa.parse(googleSheetURL, {
             const option = document.createElement('option');
             option.value = nombreProvincia;
             dataList.appendChild(option);
-            dataListForm.appendChild(option.cloneNode(true));
+            
+            // ++ CAMBIO 3: ELIMINAMOS ESTA LÍNEA ++
+            // dataListForm.appendChild(option.cloneNode(true)); // <-- Esta línea se fue
         });
     }
 });
@@ -209,7 +255,7 @@ archivoInput.addEventListener('change', function(e) {
             map.flyTo([decimalLat, decimalLng], 12);
 
         } else {
-            exifStatus.textContent = "La imagen no tiene datos GPS. Debe añadirlos manually.";
+            exifStatus.textContent = "La imagen no tiene datos GPS. Debe añadirlos manualmente.";
             exifStatus.style.color = "red";
             exifStatus.style.display = 'block';
             inputLat.readOnly = false;
@@ -349,7 +395,6 @@ loginForm.addEventListener('submit', (e) => {
             // ¡ÉXITO!
             isLoggedIn = true;
             loginModal.classList.remove('visible'); // Oculta el modal
-            // CORRECCIÓN: Borramos la línea 'formContainer.classList.add('visible');'
             formContainer.classList.add('expanded'); // Y lo expande
         } else {
             // Error
