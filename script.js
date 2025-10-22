@@ -1,14 +1,10 @@
 // 1. INICIALIZAR EL MAPA
 const map = L.map('map');
-
-const southWest = L.latLng(-57, -75);
-const northEast = L.latLng(-20, -52);
+// ... (código de inicialización del mapa sin cambios) ...
 const bounds = L.latLngBounds(southWest, northEast);
-
 map.fitBounds(bounds);
 map.setMaxBounds(bounds);
 map.setMinZoom(4);
-
 L.tileLayer('https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/capabaseargenmap@EPSG%3A3857@png/{z}/{x}/{-y}.png', {
     attribution: '<a href="http://www.ign.gob.ar" target="_blank">Instituto Geográfico Nacional</a>'
 }).addTo(map);
@@ -17,123 +13,45 @@ const markersLayer = L.layerGroup().addTo(map);
 let todosLosLugares = [];
 let capasProvincias = {};
 let provinciaSeleccionada = null;
-let geojsonLayer = null; // Variable para guardar la capa de provincias
+let geojsonLayer = null;
+
+// ++ CAMBIO 1: NUEVA VARIABLE GLOBAL PARA GUARDAR LOS POLÍGONOS ++
+let provinciasGeoJSONData = null;
 
 const defaultStyle = { color: "#083D77", weight: 1.5, opacity: 1, fillColor: "#2E628F", fillOpacity: 0.4, "interactive": true };
-const highlightStyle = { color: "#F9A620", weight: 3, opacity: 1, fillColor: "#F9A620", fillOpacity: 0.6, "interactive": true };
-const hiddenStyle = { opacity: 0, fillOpacity: 0, "interactive": false }; // Estilo para ocultar
-
-// ++ CAMBIO 1: AÑADIMOS LA LISTA MAESTRA DE JURISDICCIONES ++
+// ... (resto de estilos y lista de JURISDICCIONES_ARG sin cambios) ...
 const JURISDICCIONES_ARG = [
-    "Buenos Aires",
-    "Catamarca",
-    "Chaco",
-    "Chubut",
-    "Ciudad Autónoma de Buenos Aires",
-    "Córdoba",
-    "Corrientes",
-    "Entre Ríos",
-    "Formosa",
-    "Jujuy",
-    "La Pampa",
-    "La Rioja",
-    "Mendoza",
-    "Misiones",
-    "Neuquén",
-    "Río Negro",
-    "Salta",
-    "San Juan",
-    "San Luis",
-    "Santa Cruz",
-    "Santa Fe",
-    "Santiago del Estero",
-    "Tierra del Fuego, Antártida e Islas del Atlántico Sur",
-    "Tucumán"
+    "Buenos Aires", "Catamarca", "Chaco", "Chubut", "Ciudad Autónoma de Buenos Aires",
+    "Córdoba", "Corrientes", "Entre Ríos", "Formosa", "Jujuy", "La Pampa", "La Rioja",
+    "Mendoza", "Misiones", "Neuquén", "Río Negro", "Salta", "San Juan", "San Luis",
+    "Santa Cruz", "Santa Fe", "Santiago del Estero", "Tierra del Fuego, Antártida e Islas del Atlántico Sur", "Tucumán"
 ];
-
-// ++ CAMBIO 2: AÑADIMOS LA FUNCIÓN PARA POBLAR EL FORMULARIO ++
 function popularListaProvinciasForm() {
     const dataListForm = document.getElementById('province-list-form');
-    // Limpiamos por si acaso
     dataListForm.innerHTML = ''; 
-    
     JURISDICCIONES_ARG.forEach(nombreProvincia => {
         const option = document.createElement('option');
         option.value = nombreProvincia;
         dataListForm.appendChild(option);
     });
 }
-// La llamamos una vez al cargar la página
 popularListaProvinciasForm();
 
 
 // 2. LÓGICA DE LAS PROVINCIAS Y FILTRADO
-function mostrarTodosLosMarcadores() {
-    markersLayer.clearLayers();
-    todosLosLugares.forEach(lugar => {
-        if (lugar.lat && lugar.lng) {
-            L.marker([lugar.lat, lugar.lng])
-                .addTo(markersLayer)
-                .bindPopup(`
-                    <img src="${lugar.imagen}" alt="Imagen de ${lugar.nombre}" />
-                    <b>${lugar.nombre}</b><br>${lugar.info}
-                `, { className: 'custom-popup' });
-        }
-    });
-}
-
-function mostrarMarcadoresDeProvincia(nombreProvincia) {
-    markersLayer.clearLayers();
-    const lugaresDeLaProvincia = todosLosLugares.filter(lugar => lugar.provincia && lugar.provincia.trim() === nombreProvincia);
-    lugaresDeLaProvincia.forEach(lugar => {
-        if (lugar.lat && lugar.lng) {
-            L.marker([lugar.lat, lugar.lng])
-                .addTo(markersLayer)
-                .bindPopup(`
-                    <img src="${lugar.imagen}" alt="Imagen de ${lugar.nombre}" />
-                    <b>${lugar.nombre}</b><br>${lugar.info}
-                `, { className: 'custom-popup' });
-        }
-    });
-}
-
-function onProvinceClick(e) {
-    const layer = e.target;
-    const nombreProvincia = layer.feature.properties.nombre;
-
-    geojsonLayer.eachLayer(l => l.setStyle(hiddenStyle));
-    layer.setStyle(highlightStyle);
-    layer.bringToFront();
-    provinciaSeleccionada = layer;
-
-    map.flyToBounds(layer.getBounds());
-    mostrarMarcadoresDeProvincia(nombreProvincia);
-}
-
-function onEachFeature(feature, layer) {
-    const nombreProvincia = feature.properties.nombre;
-    capasProvincias[nombreProvincia.toLowerCase().trim()] = layer;
-    layer.on({
-        click: onProvinceClick,
-        mouseover: function (e) {
-            const hoveredLayer = e.target;
-            if (hoveredLayer !== provinciaSeleccionada) {
-                hoveredLayer.setStyle({ weight: 3, color: '#F9A620', fillOpacity: 0.6 });
-            }
-        },
-        mouseout: function (e) {
-            const hoveredLayer = e.target;
-            if (hoveredLayer !== provinciaSeleccionada) {
-                hoveredLayer.setStyle(defaultStyle);
-            }
-        }
-    });
-}
+// ... (funciones mostrarTodosLosMarcadores, mostrarMarcadoresDeProvincia, onProvinceClick, onEachFeature sin cambios) ...
+function mostrarTodosLosMarcadores() { /* ... */ }
+function mostrarMarcadoresDeProvincia(nombreProvincia) { /* ... */ }
+function onProvinceClick(e) { /* ... */ }
+function onEachFeature(feature, layer) { /* ... */ }
 
 // Ruta corregida para GitHub Pages
 fetch('./provincias.geojson')
     .then(response => response.json())
     .then(data => {
+        // ++ CAMBIO 2: GUARDAMOS LOS DATOS DEL GEOJSON EN LA VARIABLE GLOBAL ++
+        provinciasGeoJSONData = data; // Guardamos los polígonos
+
         geojsonLayer = L.geoJSON(data, {
             onEachFeature: onEachFeature,
             style: defaultStyle
@@ -142,55 +60,22 @@ fetch('./provincias.geojson')
     .catch(error => console.error('Error al cargar las provincias:', error));
 
 // 3. CARGAR DATOS Y POBLAR EL BUSCADOR
+// ... (código de Papa.parse sin cambios) ...
 const googleSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTozxVh-G1pmH5SPMY3GTizIK1I8l_a6PX6ZE5z3J0Gq3r9-xAmh8_9YmyIkvx3CwAXCCWC6zHmt3pU/pub?gid=0&single=true&output=csv';
-Papa.parse(googleSheetURL, {
-    download: true,
-    header: true,
-    complete: function(results) {
-        todosLosLugares = results.data;
-        mostrarTodosLosMarcadores();
-        
-        const dataList = document.getElementById('province-list');
-        // const dataListForm = document.getElementById('province-list-form'); // Ya no necesitamos esta
-        const todasLasProvincias = todosLosLugares
-            .map(lugar => lugar.provincia ? lugar.provincia.trim() : null)
-            .filter(Boolean);
-        const provinciasUnicas = [...new Set(todasLasProvincias)];
-        
-        provinciasUnicas.forEach(nombreProvincia => {
-            const option = document.createElement('option');
-            option.value = nombreProvincia;
-            dataList.appendChild(option);
-            
-            // ++ CAMBIO 3: ELIMINAMOS ESTA LÍNEA ++
-            // dataListForm.appendChild(option.cloneNode(true)); // <-- Esta línea se fue
-        });
-    }
-});
+Papa.parse(googleSheetURL, { /* ... */ });
 
 // 4. LÓGICA DEL BUSCADOR
+// ... (código del buscador sin cambios) ...
 const searchButton = document.getElementById('search-button');
 const searchInput = document.getElementById('province-search');
-function buscarProvincia() {
-    const searchTerm = searchInput.value.trim().toLowerCase();
-    const provinciaLayer = capasProvincias[searchTerm];
-    if (provinciaLayer) {
-        provinciaLayer.fire('click');
-        searchInput.value = '';
-    } else {
-        alert("Provincia no encontrada. Por favor, selecciona un nombre de la lista.");
-    }
-}
+function buscarProvincia() { /* ... */ }
 searchButton.addEventListener('click', buscarProvincia);
-searchInput.addEventListener('keyup', function(event) {
-    if (event.key === "Enter") {
-        buscarProvincia();
-    }
-});
+searchInput.addEventListener('keyup', function(event) { /* ... */ });
+
 
 // --- 5. LÓGICA DEL FORMULARIO DE CARGA (EXIF, CLOUDINARY y GOOGLE SCRIPT) ---
 
-// --- Constantes de Cloudinary y Google Apps Script ---
+// ... (constantes de Cloudinary y SCRIPT_URL sin cambios) ...
 const CLOUD_NAME = "dm11xhsaq";
 const UPLOAD_PRESET = "mapa-interactivo-malvinas";
 const urlApiCloudinary = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
@@ -203,8 +88,11 @@ const hiddenImagenInput = document.getElementById('imagen-url-hidden');
 const inputLat = document.getElementById('form-lat');
 const inputLng = document.getElementById('form-lng');
 const exifStatus = document.getElementById('exif-status');
+// ++ CAMBIO 3: AÑADIMOS REFERENCIA AL INPUT DE PROVINCIA ++
+const inputProvincia = document.getElementById('form-provincia');
 
 // --- Referencias para el Login (se usan en Sección 6) ---
+// ... (constantes de login sin cambios) ...
 const loginModal = document.getElementById('login-modal-overlay');
 const loginForm = document.getElementById('login-form');
 const loginError = document.getElementById('login-error');
@@ -214,23 +102,17 @@ const formHeader = formContainer.querySelector('h3');
 
 
 // --- Función Helper para EXIF ---
-// Convierte Grados, Minutos, Segundos (DMS) a Grados Decimales (DD)
-function dmsToDd(grados, minutos, segundos, direccion) {
-    let dd = grados + minutos / 60 + segundos / 3600;
-    if (direccion === "S" || direccion === "W") {
-        dd = dd * -1;
-    }
-    return dd;
-}
+function dmsToDd(grados, minutos, segundos, direccion) { /* ... */ }
 
 // --- Listener para leer EXIF al seleccionar imagen ---
 archivoInput.addEventListener('change', function(e) {
     const file = e.target.files[0];
-    if (!file) {
-        return;
-    }
+    if (!file) { return; }
+
+    // Reseteamos los campos
     inputLat.value = '';
     inputLng.value = '';
+    inputProvincia.value = ''; // ++ Reseteamos la provincia también ++
     exifStatus.style.display = 'none';
 
     EXIF.getData(file, function() {
@@ -254,50 +136,86 @@ archivoInput.addEventListener('change', function(e) {
 
             map.flyTo([decimalLat, decimalLng], 12);
 
+            // ++ CAMBIO 4: LLAMAMOS A LA NUEVA FUNCIÓN DE BÚSQUEDA ++
+            findProvinciaFromCoords(decimalLat, decimalLng);
+
         } else {
+            // ... (código de error de EXIF sin cambios) ...
             exifStatus.textContent = "La imagen no tiene datos GPS. Debe añadirlos manualmente.";
             exifStatus.style.color = "red";
             exifStatus.style.display = 'block';
             inputLat.readOnly = false;
             inputLng.readOnly = false;
+            inputProvincia.readOnly = false; // Hacemos la provincia editable también
             inputLat.placeholder = "Latitud (manual)";
             inputLng.placeholder = "Longitud (manual)";
+            inputProvincia.placeholder = "Provincia (manual)";
         }
     });
 });
 
+// ++ CAMBIO 5: NUEVA FUNCIÓN "PUNTO EN POLÍGONO" CON TURF.JS ++
+function findProvinciaFromCoords(lat, lng) {
+    // Primero, verificamos que el GeoJSON de provincias se haya cargado
+    if (!provinciasGeoJSONData) {
+        console.error("Los datos de provincias aún no se han cargado.");
+        exifStatus.textContent += " Error: No se pudieron cargar los límites de provincias.";
+        exifStatus.style.color = "red";
+        return;
+    }
+
+    // Creamos un punto usando Turf (Turf usa el formato [Longitud, Latitud])
+    const point = turf.point([lng, lat]);
+    let foundProvincia = null;
+
+    // Iteramos sobre cada "feature" (provincia) en nuestro GeoJSON
+    for (const feature of provinciasGeoJSONData.features) {
+        // turf.booleanPointInPolygon revisa si el punto está dentro del polígono
+        const isInside = turf.booleanPointInPolygon(point, feature.geometry);
+        
+        if (isInside) {
+            foundProvincia = feature.properties.nombre;
+            break; // Encontramos la provincia, detenemos el bucle
+        }
+    }
+
+    if (foundProvincia) {
+        inputProvincia.value = foundProvincia;
+        inputProvincia.readOnly = true; // La bloqueamos porque la encontramos
+        exifStatus.textContent = `¡Coordenadas y provincia encontradas: ${foundProvincia}!`;
+        exifStatus.style.color = "#083D77";
+    } else {
+        exifStatus.textContent += " Punto fuera de los límites de Argentina.";
+        exifStatus.style.color = "red";
+        inputProvincia.readOnly = false; // Dejamos que la escriba manualmente
+        inputProvincia.placeholder = "Provincia (no se encontró)";
+    }
+}
+
 
 // --- Listener para ENVIAR el formulario (SUBMIT) ---
 newPointForm.addEventListener('submit', async function(e) {
+    // ... (código de submit sin cambios) ...
     e.preventDefault();
-
     const submitButton = newPointForm.querySelector('button[type="submit"]');
     const archivo = archivoInput.files[0];
-
     if (!inputLat.value || !inputLng.value) {
         alert("Por favor, asegúrese de que la imagen tenga GPS o rellene la latitud y longitud manualmente.");
         return;
     }
-
     // --- 1. PROCESO DE SUBIDA A CLOUDINARY ---
     if (archivo) {
         submitButton.disabled = true;
         submitButton.textContent = "Subiendo imagen...";
-
         const formDataCloudinary = new FormData();
         formDataCloudinary.append('file', archivo);
         formDataCloudinary.append('upload_preset', UPLOAD_PRESET);
-
         try {
-            const respuesta = await fetch(urlApiCloudinary, {
-                method: 'POST',
-                body: formDataCloudinary
-            });
+            const respuesta = await fetch(urlApiCloudinary, { method: 'POST', body: formDataCloudinary });
             if (!respuesta.ok) throw new Error('Error al subir a Cloudinary');
             const dataCloudinary = await respuesta.json();
             hiddenImagenInput.value = dataCloudinary.secure_url;
             console.log("Imagen subida:", hiddenImagenInput.value);
-
         } catch (error) {
             console.error('Error en Cloudinary:', error);
             alert("Hubo un error al subir la imagen. Intenta de nuevo.");
@@ -309,19 +227,12 @@ newPointForm.addEventListener('submit', async function(e) {
         alert("Por favor, selecciona un archivo de imagen.");
         return;
     }
-
     // --- 2. PROCESO DE ENVÍO A GOOGLE SCRIPT ---
     console.log("Enviando a Google Script...");
     submitButton.textContent = "Guardando punto...";
-
-    // Creamos un FormData nuevo para añadir el parámetro 'action'
     const pointFormData = new FormData(newPointForm);
-    pointFormData.append('action', 'addPoint'); // Le decimos al script que es para "Añadir Punto"
-
-    fetch(SCRIPT_URL, {
-        method: 'POST',
-        body: pointFormData // Usamos el nuevo FormData
-    })
+    pointFormData.append('action', 'addPoint');
+    fetch(SCRIPT_URL, { method: 'POST', body: pointFormData })
     .then(response => response.json())
     .then(data => {
         if (data.result === 'success') {
@@ -330,9 +241,11 @@ newPointForm.addEventListener('submit', async function(e) {
             exifStatus.style.display = 'none';
             inputLat.readOnly = true;
             inputLng.readOnly = true;
+            inputProvincia.readOnly = false; // Lo reseteamos
             inputLat.placeholder = "Latitud (automática)";
             inputLng.placeholder = "Longitud (automática)";
-            formContainer.classList.remove('expanded'); // Oculta el formulario después de enviar
+            inputProvincia.placeholder = "Provincia (automática)";
+            formContainer.classList.remove('expanded');
         } else {
             alert('Hubo un error al añadir el punto.');
         }
@@ -348,56 +261,41 @@ newPointForm.addEventListener('submit', async function(e) {
 });
 
 
-// 6. LÓGICA DEL LOGIN Y FORMULARIO (NUEVA)
-let isLoggedIn = false; // Variable global para saber si está logueado
-
+// 6. LÓGICA DEL LOGIN Y FORMULARIO
+// ... (código de login sin cambios) ...
+let isLoggedIn = false; 
 formHeader.addEventListener('click', () => {
     if (isLoggedIn) {
-        // Si ya inició sesión, simplemente expande/contrae el formulario
         formContainer.classList.toggle('expanded');
     } else {
-        // Si no ha iniciado sesión, muestra el modal de login
         loginModal.classList.add('visible');
     }
 });
-
-// -- Listener para el botón de cancelar del modal --
 loginCancelButton.addEventListener('click', () => {
     loginModal.classList.remove('visible');
     loginError.style.display = 'none';
     loginForm.reset();
 });
-
-// -- Listener para el formulario de LOGIN --
 loginForm.addEventListener('submit', (e) => {
     e.preventDefault();
-    
     const cuil = document.getElementById('login-cuil').value;
     const pass = document.getElementById('login-pass').value;
     const loginButton = document.getElementById('login-button');
-
     loginButton.disabled = true;
     loginButton.textContent = "Verificando...";
     loginError.style.display = 'none';
-
     const formData = new FormData();
-    formData.append('action', 'login'); // ¡Le decimos al script que esta es una acción de login!
+    formData.append('action', 'login');
     formData.append('cuil', cuil);
     formData.append('pass', pass);
-
-    fetch(SCRIPT_URL, {
-        method: 'POST',
-        body: formData
-    })
+    fetch(SCRIPT_URL, { method: 'POST', body: formData })
     .then(response => response.json())
     .then(data => {
         if (data.result === 'success') {
-            // ¡ÉXITO!
             isLoggedIn = true;
-            loginModal.classList.remove('visible'); // Oculta el modal
-            formContainer.classList.add('expanded'); // Y lo expande
+            loginModal.classList.remove('visible');
+            formContainer.classList.add('expanded');
         } else {
-            // Error
             loginError.textContent = data.message || "CUIL o contraseña incorrectos";
             loginError.style.display = 'block';
         }
@@ -411,21 +309,13 @@ loginForm.addEventListener('submit', (e) => {
         loginButton.disabled = false;
         loginButton.textContent = "Ingresar";
         if (!isLoggedIn) {
-            loginForm.reset(); // Solo resetea si falló
+            loginForm.reset();
         }
     });
 });
 
 // --- 7. LÓGICA DEL BOTÓN DE RESET ---
+// ... (código de reset sin cambios) ...
 const resetButton = document.getElementById('reset-button');
-
-function resetMap() {
-    if (geojsonLayer) {
-        geojsonLayer.eachLayer(l => l.setStyle(defaultStyle));
-    }
-    map.flyToBounds(bounds);
-    mostrarTodosLosMarcadores();
-    provinciaSeleccionada = null;
-}
-
+function resetMap() { /* ... */ }
 resetButton.addEventListener('click', resetMap);
