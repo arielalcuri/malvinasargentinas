@@ -84,12 +84,19 @@ html, body {
     content: ' ▲';
 }
 
-#new-point-form input {
+#new-point-form input,
+#new-point-form datalist {
     width: 95%;
     padding: 8px;
     margin-bottom: 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
+}
+
+/* Estilo para los campos de solo lectura */
+#new-point-form input[readonly] {
+    background-color: #eee;
+    cursor: not-allowed;
 }
 
 #new-point-form button {
