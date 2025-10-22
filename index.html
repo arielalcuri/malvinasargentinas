@@ -19,12 +19,16 @@
         <h3>Añadir un Nuevo Punto</h3>
         <form id="new-point-form">
             <input type="text" name="nombre" placeholder="Nombre del lugar" required>
-            <input type="text" name="lat" placeholder="Latitud (se rellena al buscar)" required>
-            <input type="text" name="lng" placeholder="Longitud (se rellena al buscar)" required>
+            
+            <input type="text" name="lat" id="form-lat" placeholder="Latitud (automática)" required readonly>
+            <input type="text" name="lng" id="form-lng" placeholder="Longitud (automática)" required readonly>
+            
             <input type="text" name="info" placeholder="Descripción" required>
             
-            <label for="punto-imagen-upload" style="font-size: 0.9em; color: #555;">Imagen (requerido):</label>
-            <input type="file" id="punto-imagen-upload" accept="image/*" style="padding: 0; border: none; margin-bottom: 10px;" required>
+            <label for="punto-imagen-upload" style="font-size: 0.9em; color: #555;">Imagen (con GPS):</label>
+            <input type="file" id="punto-imagen-upload" accept="image/*" style="padding: 0; border: none; margin-bottom: 5px;" required>
+            
+            <small id="exif-status" style="display: none; padding-bottom: 10px; color: #083D77; font-weight: bold;"></small>
             
             <input type="hidden" name="imagen" id="imagen-url-hidden">
             
@@ -48,8 +52,9 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-   
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
    
     <script src="script.js"></script>
 
