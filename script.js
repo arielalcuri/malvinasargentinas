@@ -53,23 +53,16 @@ function mostrarMarcadoresDeProvincia(nombreProvincia) {
     });
 }
 
-// --- FUNCIÓN onProvinceClick MODIFICADA ---
 function onProvinceClick(e) {
     const layer = e.target;
     const nombreProvincia = layer.feature.properties.nombre;
 
-    // 1. Ocultamos todas las provincias
     geojsonLayer.eachLayer(l => l.setStyle(hiddenStyle));
-    
-    // 2. Resaltamos y traemos al frente solo la seleccionada
     layer.setStyle(highlightStyle);
     layer.bringToFront();
     provinciaSeleccionada = layer;
 
-    // 3. Zoom animado a la provincia
     map.flyToBounds(layer.getBounds());
-
-    // 4. Mostramos solo los marcadores de esa provincia
     mostrarMarcadoresDeProvincia(nombreProvincia);
 }
 
@@ -93,10 +86,10 @@ function onEachFeature(feature, layer) {
     });
 }
 
-fetch('/provincias.geojson')
+// *** IMPORTANTE: Asegúrate de que la ruta tenga './' al principio ***
+fetch('./provincias.geojson')
     .then(response => response.json())
     .then(data => {
-        // Guardamos la capa en nuestra variable global
         geojsonLayer = L.geoJSON(data, {
             onEachFeature: onEachFeature,
             style: defaultStyle
@@ -149,28 +142,101 @@ searchInput.addEventListener('keyup', function(event) {
     }
 });
 
-// --- 5. LÓGICA DEL FORMULARIO DE CARGA (MODIFICADA PARA CLOUDINARY) ---
+// --- 5. LÓGICA DEL FORMULARIO DE CARGA (EXIF, CLOUDINARY y GOOGLE SCRIPT) ---
 
-// ++ Pega tus constantes de Cloudinary aquí ++
-const CLOUD_NAME = "dm11xhsaq";
-const UPLOAD_PRESET = "mapa-interactivo-malvinas";
+// *** ¡REEMPLAZA ESTOS VALORES! ***
+const CLOUD_NAME = "dm11xhsaq"; // (¡Este es tu Cloud Name!)
+const UPLOAD_PRESET = "mapa-interactivo-malvinas"; // (¡Este es tu Preset!)
+// **********************************
+
 const urlApiCloudinary = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
-
-const newPointForm = document.getElementById('new-point-form');
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby7Qfv-fl4uifXiL8edLPkHIZXyrpjKvlWmsuYKtLF9ncp6WdWKxJooLWBM46TZUIWA/exec'; // URL del usuario
 
-// ++ Convertimos la función del listener en ASYNC para poder usar 'await' ++
+// Referencias a los elementos del formulario
+const newPointForm = document.getElementById('new-point-form');
+const archivoInput = document.getElementById('punto-imagen-upload');
+const hiddenImagenInput = document.getElementById('imagen-url-hidden');
+const inputLat = document.getElementById('form-lat');
+const inputLng = document.getElementById('form-lng');
+const exifStatus = document.getElementById('exif-status');
+
+// --- Función Helper para EXIF ---
+// Convierte Grados, Minutos, Segundos (DMS) a Grados Decimales (DD)
+function dmsToDd(grados, minutos, segundos, direccion) {
+    let dd = grados + minutos / 60 + segundos / 3600;
+    // Las latitudes Sur (S) y longitudes Oeste (W) son negativas
+    if (direccion === "S" || direccion === "W") {
+        dd = dd * -1;
+    }
+    return dd;
+}
+
+// --- Listener para leer EXIF al seleccionar imagen ---
+archivoInput.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) {
+        return;
+    }
+
+    // Reseteamos los campos y el estado
+    inputLat.value = '';
+    inputLng.value = '';
+    exifStatus.style.display = 'none';
+
+    // Usamos la librería EXIF.js
+    EXIF.getData(file, function() {
+        const lat = EXIF.getTag(this, "GPSLatitude");
+        const lng = EXIF.getTag(this, "GPSLongitude");
+        const latRef = EXIF.getTag(this, "GPSLatitudeRef");
+        const lngRef = EXIF.getTag(this, "GPSLongitudeRef");
+
+        if (lat && lng && latRef && lngRef) {
+            // ¡Éxito! Convertimos los datos
+            const decimalLat = dmsToDd(lat[0], lat[1], lat[2], latRef);
+            const decimalLng = dmsToDd(lng[0], lng[1], lng[2], lngRef);
+
+            // Rellenamos los campos del formulario
+            inputLat.value = decimalLat.toFixed(6); // .toFixed(6) para 6 decimales
+            inputLng.value = decimalLng.toFixed(6);
+
+            // Mostramos un mensaje de éxito
+            exifStatus.textContent = "¡Coordenadas GPS encontradas!";
+            exifStatus.style.color = "#083D77";
+            exifStatus.style.display = 'block';
+
+            // Movemos el mapa a esa ubicación y añadimos un marcador temporal
+            map.flyTo([decimalLat, decimalLng], 12); // Zoom 12
+
+        } else {
+            // No se encontraron datos GPS
+            exifStatus.textContent = "La imagen no tiene datos GPS. Debe añadirlos manualmente.";
+            exifStatus.style.color = "red";
+            exifStatus.style.display = 'block';
+            
+            // Hacemos los campos editables si no hay GPS
+            inputLat.readOnly = false;
+            inputLng.readOnly = false;
+            inputLat.placeholder = "Latitud (manual)";
+            inputLng.placeholder = "Longitud (manual)";
+        }
+    });
+});
+
+
+// --- Listener para ENVIAR el formulario (SUBMIT) ---
 newPointForm.addEventListener('submit', async function(e) {
     e.preventDefault();
 
-    // ++ Referencias a los nuevos elementos del formulario ++
-    const archivoInput = document.getElementById('punto-imagen-upload');
-    const hiddenImagenInput = document.getElementById('imagen-url-hidden');
     const submitButton = newPointForm.querySelector('button[type="submit"]');
     const archivo = archivoInput.files[0];
 
+    // Verificamos que los campos de lat/lng no estén vacíos
+    if (!inputLat.value || !inputLng.value) {
+        alert("Por favor, asegúrese de que la imagen tenga GPS o rellene la latitud y longitud manualmente.");
+        return;
+    }
+
     // --- 1. PROCESO DE SUBIDA A CLOUDINARY ---
-    // Esto solo se ejecuta si el usuario seleccionó un archivo
     if (archivo) {
         submitButton.disabled = true;
         submitButton.textContent = "Subiendo imagen...";
@@ -189,7 +255,7 @@ newPointForm.addEventListener('submit', async function(e) {
             
             const dataCloudinary = await respuesta.json();
             
-            // ++ ¡Éxito! Ponemos la URL obtenida en el input oculto ++
+            // ¡Éxito! Ponemos la URL obtenida en el input oculto
             hiddenImagenInput.value = dataCloudinary.secure_url; 
             console.log("Imagen subida:", hiddenImagenInput.value);
 
@@ -201,17 +267,16 @@ newPointForm.addEventListener('submit', async function(e) {
             return; // Detenemos la función si falla la subida de imagen
         }
     } else {
-        // ++ Si el campo 'required' falla por alguna razón, nos aseguramos de que no envíe nada ++
-        hiddenImagenInput.value = ''; 
+        // Esto no debería pasar por el 'required' del HTML, pero es una validación extra
+        alert("Por favor, selecciona un archivo de imagen.");
+        return;
     }
 
-    // --- 2. PROCESO DE ENVÍO A GOOGLE SCRIPT (CÓDIGO ORIGINAL) ---
+    // --- 2. PROCESO DE ENVÍO A GOOGLE SCRIPT ---
     
     console.log("Enviando a Google Script...");
-    submitButton.textContent = "Guardando punto..."; // ++ Nuevo estado de carga ++
+    submitButton.textContent = "Guardando punto...";
 
-    // Esta línea ahora usa new FormData(newPointForm) que INCLUYE
-    // el input oculto 'imagen' con la URL de Cloudinary.
     fetch(SCRIPT_URL, {
         method: 'POST',
         body: new FormData(newPointForm) 
@@ -221,6 +286,12 @@ newPointForm.addEventListener('submit', async function(e) {
         if (data.result === 'success') {
             alert('¡Punto añadido con éxito! El mapa se actualizará en 1-2 minutos. Por favor, recarga la página.');
             newPointForm.reset();
+            // Reseteamos el estado del formulario EXIF
+            exifStatus.style.display = 'none';
+            inputLat.readOnly = true;
+            inputLng.readOnly = true;
+            inputLat.placeholder = "Latitud (automática)";
+            inputLng.placeholder = "Longitud (automática)";
         } else {
             alert('Hubo un error al añadir el punto.');
         }
@@ -230,7 +301,7 @@ newPointForm.addEventListener('submit', async function(e) {
         alert('Hubo un error al guardar el punto.');
     })
     .finally(() => {
-        // ++ Reactivamos el botón al finalizar (éxito o error) ++
+        // Reactivamos el botón al finalizar (éxito o error)
         submitButton.disabled = false;
         submitButton.textContent = "Añadir al Mapa";
     });
