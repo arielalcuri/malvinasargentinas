@@ -8,13 +8,24 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-   
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
-
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+    <div id="login-modal-overlay">
+        <div id="login-modal-box">
+            <h3>Autenticación Requerida</h3>
+            <p>Debes iniciar sesión para añadir un nuevo punto.</p>
+            <form id="login-form">
+                <input type="text" id="login-cuil" placeholder="CUIL (sin guiones)" required>
+                <input type="password" id="login-pass" placeholder="Contraseña" required>
+                <button type="submit" id="login-button">Ingresar</button>
+                <button type="button" id="login-cancel-button">Cancelar</button>
+            </form>
+            <p id="login-error" style="color: red; display: none;"></p>
+        </div>
+    </div>
     <div id="form-container">
         <h3>Añadir un Nuevo Punto</h3>
         <form id="new-point-form">
@@ -53,9 +64,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
-   
     <script src="script.js"></script>
 
 </body>
